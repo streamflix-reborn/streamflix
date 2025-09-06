@@ -2,7 +2,7 @@ package com.tanasi.streamflix.models
 
 import com.tanasi.streamflix.adapters.AppAdapter
 
-class Provider(
+open class Provider(
     val name: String,
     val logo: String,
     val language: String,
