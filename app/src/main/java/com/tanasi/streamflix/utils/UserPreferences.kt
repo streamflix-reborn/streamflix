@@ -18,8 +18,8 @@ object UserPreferences {
 
     private lateinit var prefs: SharedPreferences
 
-    // Default DoH Provider URL (AdGuard)
-    private const val DEFAULT_DOH_PROVIDER_URL = "https://dns.adguard-dns.com/dns-query"
+    // Default DoH Provider URL (Cloudflare)
+    private const val DEFAULT_DOH_PROVIDER_URL = "https://cloudflare-dns.com/dns-query"
     const val DOH_DISABLED_VALUE = "" // Value to represent DoH being disabled
     private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingcommunityz.life"
 
