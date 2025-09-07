@@ -31,7 +31,7 @@ class VixcloudExtractor : Extractor() {
     }
 
     private fun removeTrailingCommaFromJsonObjectString(jsonString: String): String {
-        var temp = jsonString.trim()
+        val temp = jsonString.trim() // Changed var to val
         val lastBraceIndex = temp.lastIndexOf('}')
         if (lastBraceIndex > 0 && temp.startsWith("{")) {
             var charIndexBeforeBrace = lastBraceIndex - 1
