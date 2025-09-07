@@ -19,6 +19,7 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import okhttp3.dnsoverhttps.DnsOverHttps
+import okhttp3.logging.HttpLoggingInterceptor // Import aggiunto
 import org.json.JSONObject
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
@@ -494,14 +495,18 @@ object StreamingCommunityProvider : Provider {
     private interface StreamingCommunityService {
 
         companion object {
-            private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            private const val USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
             fun build(baseUrl: String): StreamingCommunityService {
+                val logging = HttpLoggingInterceptor()
+                logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+
                 val clientBuilder = OkHttpClient.Builder()
                     .readTimeout(30, TimeUnit.SECONDS)
                     .connectTimeout(30, TimeUnit.SECONDS)
                     .addInterceptor(UserAgentInterceptor(USER_AGENT))
                     .addNetworkInterceptor(RedirectInterceptor())
+                    .addInterceptor(logging) // Aggiunto HttpLoggingInterceptor
 
                 val dohProviderUrl = UserPreferences.dohProviderUrl
                 if (dohProviderUrl.isNotEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {
