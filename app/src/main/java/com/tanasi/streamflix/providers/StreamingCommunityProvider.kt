@@ -30,7 +30,7 @@ import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 object StreamingCommunityProvider : Provider {
-    private const val DEFAULT_DOMAIN: String = "streamingunity.to"
+    private const val DEFAULT_DOMAIN: String = "streamingcommunityz.bid"
     override val baseUrl = DEFAULT_DOMAIN
     private var _domain: String? = null
     private var domain: String
@@ -54,7 +54,7 @@ object StreamingCommunityProvider : Provider {
                 rebuildService(value)
             }
         }
-    private const val lang = "it"
+    private const val LANG = "it"
 
     override val name = "StreamingCommunity"
     override val logo = "https://$domain/apple-touch-icon.png"
@@ -99,14 +99,14 @@ object StreamingCommunityProvider : Provider {
                         Movie(
                             id = it.id + "-" + it.slug,
                             title = it.name,
-                            banner = getImageLink(it.images.find { it.type == "background" }?.filename),
+                            banner = getImageLink(it.images.find { image -> image.type == "background" }?.filename),
                             rating = it.score
                         )
                     else
                         TvShow(
                             id = it.id + "-" + it.slug,
                             title = it.name,
-                            banner = getImageLink(it.images.find { it.type == "background" }?.filename),
+                            banner = getImageLink(it.images.find { image -> image.type == "background" }?.filename),
                             rating = it.score
                         )
                 },
@@ -126,8 +126,8 @@ object StreamingCommunityProvider : Provider {
                                 title = it.name,
                                 released = it.lastAirDate,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename),
-                                banner = getImageLink(it.images.find { it.type == "background" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename),
+                                banner = getImageLink(it.images.find { image -> image.type == "background" }?.filename)
                             )
                         else
                             TvShow(
@@ -135,8 +135,8 @@ object StreamingCommunityProvider : Provider {
                                 title = it.name,
                                 released = it.lastAirDate,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename),
-                                banner = getImageLink(it.images.find { it.type == "background" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename),
+                                banner = getImageLink(it.images.find { image -> image.type == "background" }?.filename)
                             )
                     }
                 )
@@ -165,7 +165,7 @@ object StreamingCommunityProvider : Provider {
         }
 
         return res.data.map {
-            val poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+            val poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
 
             if (it.type == "movie")
                 Movie(
@@ -195,7 +195,7 @@ object StreamingCommunityProvider : Provider {
         val movies = mutableListOf<Movie>()
 
         res.titles.map { title ->
-            val poster = getImageLink(title.images.find { it.type == "poster" }?.filename)
+            val poster = getImageLink(title.images.find { image -> image.type == "poster" }?.filename)
 
             movies.add(
                 Movie(
@@ -220,7 +220,7 @@ object StreamingCommunityProvider : Provider {
         val tvShows = mutableListOf<TvShow>()
 
         res.titles.map { title ->
-            val poster = getImageLink(title.images.find { it.type == "poster" }?.filename)
+            val poster = getImageLink(title.images.find { image -> image.type == "poster" }?.filename)
 
             tvShows.add(
                 TvShow(
@@ -249,7 +249,7 @@ object StreamingCommunityProvider : Provider {
             overview = title.plot,
             released = title.lastAirDate,
             rating = title.score,
-            poster = getImageLink(title.images.find { it.type == "poster" }?.filename),
+            poster = getImageLink(title.images.find { image -> image.type == "poster" }?.filename),
             genres = title.genres?.map {
                 Genre(
                     id = it.id,
@@ -263,9 +263,9 @@ object StreamingCommunityProvider : Provider {
                 )
             } ?: listOf(),
             trailer = let {
-                val id = title.trailers?.find { it.youtubeId != "" }?.youtubeId
-                if (!id.isNullOrEmpty())
-                    "https://youtube.com/watch?v=$id"
+                val trailerId = title.trailers?.find { trailer -> trailer.youtubeId != "" }?.youtubeId
+                if (!trailerId.isNullOrEmpty())
+                    "https://youtube.com/watch?v=$trailerId"
                 else
                     null
             },
@@ -277,14 +277,14 @@ object StreamingCommunityProvider : Provider {
                                 id = it.id + "-" + it.slug,
                                 title = it.name,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
                             )
                         } else {
                             TvShow(
                                 id = it.id + "-" + it.slug,
                                 title = it.name,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
                             )
                         }
                     }
@@ -306,7 +306,7 @@ object StreamingCommunityProvider : Provider {
             overview = title.plot,
             released = title.lastAirDate,
             rating = title.score,
-            poster = getImageLink(title.images.find { it.type == "poster" }?.filename),
+            poster = getImageLink(title.images.find { image -> image.type == "poster" }?.filename),
             genres = title.genres?.map {
                 Genre(
                     id = it.id,
@@ -320,9 +320,9 @@ object StreamingCommunityProvider : Provider {
                 )
             } ?: listOf(),
             trailer = let {
-                val id = title.trailers?.find { it.youtubeId != "" }?.youtubeId
-                if (!id.isNullOrEmpty())
-                    "https://youtube.com/watch?v=$id"
+                val trailerId = title.trailers?.find { trailer -> trailer.youtubeId != "" }?.youtubeId
+                if (!trailerId.isNullOrEmpty())
+                    "https://youtube.com/watch?v=$trailerId"
                 else
                     null
             },
@@ -334,14 +334,14 @@ object StreamingCommunityProvider : Provider {
                                 id = it.id + "-" + it.slug,
                                 title = it.name,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
                             )
                         } else {
                             TvShow(
                                 id = it.id + "-" + it.slug,
                                 title = it.name,
                                 rating = it.score,
-                                poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                                poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
                             )
                         }
                     }
@@ -368,7 +368,7 @@ object StreamingCommunityProvider : Provider {
                 id = "${seasonId.substringBefore("-")}?episode_id=${it.id}",
                 number = it.number.toIntOrNull() ?: (res.props.loadedSeason.episodes.indexOf(it) + 1),
                 title = it.name,
-                poster = getImageLink(it.images.find { it.type == "cover" }?.filename)
+                poster = getImageLink(it.images.find { image -> image.type == "cover" }?.filename)
             )
         }
     }
@@ -382,7 +382,7 @@ object StreamingCommunityProvider : Provider {
             name = "",
 
             shows = res.titles.map {
-                val poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                val poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
 
                 if (it.type == "movie")
                     Movie(
@@ -420,7 +420,7 @@ object StreamingCommunityProvider : Provider {
             id = id,
             name = id,
             filmography = res.data.map {
-                val poster = getImageLink(it.images.find { it.type == "poster" }?.filename)
+                val poster = getImageLink(it.images.find { image -> image.type == "poster" }?.filename)
 
                 if (it.type == "movie")
                     Movie(
@@ -504,14 +504,14 @@ object StreamingCommunityProvider : Provider {
                     .addNetworkInterceptor(RedirectInterceptor())
 
                 val dohProviderUrl = UserPreferences.dohProviderUrl
-                if (!dohProviderUrl.isNullOrEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {
+                if (dohProviderUrl.isNotEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {
                     try {
                         val bootstrapClient = OkHttpClient.Builder().build()
                         val dohDns = DnsOverHttps.Builder().client(bootstrapClient)
                             .url(dohProviderUrl.toHttpUrl())
                             .build()
                         clientBuilder.dns(dohDns)
-                    } catch (e: IllegalArgumentException) {
+                    } catch (_: IllegalArgumentException) {
                         // Handle invalid URL, maybe log or fallback
                     }
                 }
@@ -530,10 +530,10 @@ object StreamingCommunityProvider : Provider {
         }
 
 
-        @GET("/$lang")
+        @GET("/$LANG")
         suspend fun getHome(): Document
 
-        @GET("/$lang")
+        @GET("/$LANG")
         suspend fun getHome(
             @Header("x-inertia") xInertia: String = "true",
             @Header("x-inertia-version") version: String
@@ -543,7 +543,7 @@ object StreamingCommunityProvider : Provider {
         suspend fun search(
             @Query("q", encoded = true) keyword: String,
             @Query("offset") offset: Int = 0,
-            @Query("lang") language: String = lang
+            @Query("lang") language: String = LANG
         ): SearchRes
 
         @GET("api/archive")
@@ -553,27 +553,27 @@ object StreamingCommunityProvider : Provider {
             @Query("offset") offset: Int = 0,
             @Header("x-inertia") xInertia: String = "true",
             @Header("x-inertia-version") version: String,
-            @Query("lang") language: String = lang
+            @Query("lang") language: String = LANG
         ): ArchiveRes
 
-        @GET("$lang/titles/{id}")
+        @GET("$LANG/titles/{id}")
         suspend fun getDetails(
             @Path("id") id: String,
             @Header("x-inertia") xInertia: String = "true",
             @Header("x-inertia-version") version: String
         ): HomeRes
 
-        @GET("$lang/titles/{id}/")
+        @GET("$LANG/titles/{id}/")
         suspend fun getSeasonDetails(
             @Path("id") id: String,
             @Header("x-inertia") xInertia: String = "true",
             @Header("x-inertia-version") version: String
         ): SeasonRes
 
-        @GET("$lang/iframe/{id}")
+        @GET("$LANG/iframe/{id}")
         suspend fun getIframe(@Path("id") id: String): Document
 
-        @GET("$lang/iframe/{id}")
+        @GET("$LANG/iframe/{id}")
         suspend fun getIframe(@Path("id") id: String,
                               @Query("episode_id") episodeId: String,
                               @Query("next_episode") nextEpisode: Char = '1'
