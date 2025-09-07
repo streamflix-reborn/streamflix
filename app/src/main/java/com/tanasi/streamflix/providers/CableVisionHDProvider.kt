@@ -58,7 +58,6 @@ object CableVisionHDProvider : com.tanasi.streamflix.providers.Provider {
         val allShows = document.toTvShows()
 
         val categories = mutableListOf<Deferred<Category>>()
-
         categories.add(async {
             Category(
                 name = "Todos los Canales",
@@ -86,7 +85,22 @@ object CableVisionHDProvider : com.tanasi.streamflix.providers.Provider {
                 list = allShows.filter { it.title.contains("hbo", ignoreCase = true) || it.title.contains("max", ignoreCase = true) || it.title.contains("cine", ignoreCase = true) }
             )
         })
-
+        categories.add(async {
+            val creador = TvShow(
+                id = "creador-info", // ID especial
+                title = "Reportar problemas con proveedores en ES.",
+                poster = "https://i.ibb.co/dsknGBHT/Imagen-de-Whats-App-2025-09-06-a-las-19-00-50-e8e5bcaa.jpg"
+            )
+            val apoyo = TvShow(
+                id = "apoyo-info", // ID especial
+                title = "Apoya Si te gusta este Proveedor",
+                poster = "https://i.ibb.co/B234HsZg/APOYO-NANDO.png"
+            )
+            Category(
+                name = "Acerca de este Proveedor",
+                list = listOf(creador, apoyo)
+            )
+        })
         categories.awaitAll().filter { it.list.isNotEmpty() }
     }
 
@@ -109,6 +123,45 @@ object CableVisionHDProvider : com.tanasi.streamflix.providers.Provider {
     override suspend fun getMovie(id: String): Movie = throw NotImplementedError()
 
     override suspend fun getTvShow(id: String): TvShow {
+        when (id) {
+            "creador-info" -> {
+                return TvShow(
+                    id = id,
+                    title = "Reportar problemas con proveedores en ES.",
+                    poster = "https://i.ibb.co/dsknGBHT/Imagen-de-Whats-App-2025-09-06-a-las-19-00-50-e8e5bcaa.jpg",
+                    banner = "https://i.ibb.co/dsknGBHT/Imagen-de-Whats-App-2025-09-06-a-las-19-00-50-e8e5bcaa.jpg",
+                    overview = "¡Hola a todos!\n" +
+                            "\n" +
+                            "Les presento este nuevo proveedor, que ha sido desarrollado gracias a la fantástica colaboración de \uD83D\uDC8E@NandoGT\uD83D\uDC8E y \uD83D\uDC8E@Nandofs\uD83D\uDC8E. ¡Un excelente trabajo en equipo!\n" +
+                            "\n" +
+                            "Soporte y Reporte de Errores\n" +
+                            "Si llegan a encontrar algún problema o error con los proveedores para contenido en español (Latinoamérica) que he creado, por favor no duden en contactarme para reportarlo. De esta manera, podré trabajar en una solución lo antes posible.\n" +
+                            "\n" +
+                            "¿Interesado en el proveedor?\n" +
+                            "Si tienes curiosidad, quieres implementarlo o tienes alguna consulta sobre su funcionamiento, ¡pregunta con toda confianza! Estaré encantado de ayudarte.\n" +
+                            "\n" +
+                            "Agradecimientos Especiales\n" +
+                            "Finalmente, quiero extender un agradecimiento a todas las personas que aportan a este proyecto, y de manera muy especial a su autor principal, Lory-Stan TANASI (stantanasi.github.io), por su increíble trabajo y dedicación.\n" +
+                            "\n" +
+                            "¡Gracias a todos por su apoyo!",
+                    seasons = emptyList()
+                )
+            }
+            "apoyo-info" -> {
+                return TvShow(
+                    id = id,
+                    title = "Apoya Si te gusta este Proveedor",
+                    poster = "https://i.ibb.co/B234HsZg/APOYO-NANDO.png",
+                    banner = "https://i.ibb.co/B234HsZg/APOYO-NANDO.png",
+                    overview = "Si disfrutas usando este proveedor, te invito a considerar apoyar mi trabajo y, a su vez, al proyecto principal de Streamflix. Saber que valoras nuestro esfuerzo nos anima a seguir dedicándole tiempo y pasión a este hermoso proyecto.\n" +
+                            "\n" +
+                            "Para colaborar, simplemente escanea el siguiente código QR.\n" +
+                            "\n" +
+                            "¡Cualquier aporte, por pequeño que sea, hace una gran diferencia!",
+                    seasons = emptyList()
+                )
+            }
+        }
         val document = service.getPage(id, referer = baseUrl)
 
         val title = document.selectFirst("div.card-body h2")?.text() ?: ""
