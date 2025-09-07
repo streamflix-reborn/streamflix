@@ -67,6 +67,7 @@ interface Provider {
             SoloLatinoProvider,
             Cine24hProvider,
             PelisplustoProvider,
+            CableVisionHDProvider,
         )
     }
 }
