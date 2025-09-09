@@ -1,7 +1,6 @@
 package com.tanasi.streamflix.database.dao
 
 import androidx.room.Dao
-import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -11,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TvShowDao {
+
+    @Query("SELECT * FROM tv_shows")
+    fun getAllForBackup(): List<TvShow> // NUOVO: Sincrono per l'esportazione
 
     @Query("SELECT * FROM tv_shows WHERE id = :id")
     fun getById(id: String): TvShow?
@@ -30,11 +32,11 @@ interface TvShowDao {
     @Update
     fun update(tvShow: TvShow)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(tvShows: List<TvShow>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) // MODIFICATO: OnConflictStrategy e rimozione suspend (se non necessario)
+    fun insertAll(tvShows: List<TvShow>)
 
     @Query("SELECT * FROM tv_shows")
-    fun getAll(): Flow<List<TvShow>>
+    fun getAll(): Flow<List<TvShow>> // Esistente, mantenuto
 
     @Query("SELECT * FROM tv_shows WHERE poster IS NULL or poster = ''")
     suspend fun getAllWithNullPoster(): List<TvShow>
@@ -45,7 +47,10 @@ interface TvShowDao {
     @Query("SELECT * FROM tv_shows WHERE LOWER(title) LIKE '%' || :query || '%' LIMIT :limit OFFSET :offset")
     suspend fun searchTvShows(query: String, limit: Int, offset: Int): List<TvShow>
 
+    @Query("DELETE FROM tv_shows")
+    fun deleteAll() // NUOVO: Per l'importazione
+
     fun save(tvShow: TvShow) = getById(tvShow.id)
-        ?.let { update(tvShow) }
+        ?.let { update(tvShow.copy(id = it.id)) } // Assicurati che l'update usi l'ID corretto
         ?: insert(tvShow)
 }
