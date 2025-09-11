@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EpisodeDao {
 
+    @Query("SELECT * FROM episodes")
+    fun getAllForBackup(): List<Episode> // NUOVO: Per l'esportazione
+
     @Query(
         """
         SELECT episodes.*, (SELECT MAX(e.watchedDate)
@@ -54,6 +57,10 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE id IN (:ids)")
     fun getByIdsAsFlow(ids: List<String>): Flow<List<Episode>>
 
+    // Nota: Le query seguenti usano `tvShow = :tvShowId` e `season = :seasonId`.
+    // Questo implica che i campi `tvShow` e `season` in Episode.kt potrebbero essere
+    // usati per memorizzare ID o necessitano di TypeConverter specifici.
+    // La corretta gestione di queste relazioni è cruciale per il backup/ripristino.
     @Query("SELECT * FROM episodes WHERE tvShow = :tvShowId ORDER BY season, number")
     fun getByTvShowId(tvShowId: String): List<Episode>
 
@@ -70,7 +77,7 @@ interface EpisodeDao {
     fun insert(episode: Episode)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertAll(episodes: List<Episode>)
+    fun insertAll(episodes: List<Episode>) // Esistente, corretto per l'importazione
 
     @Query("SELECT * FROM episodes WHERE tvShow = :tvShowId")
     fun getEpisodesByTvShowId(tvShowId: String): List<Episode>
@@ -78,8 +85,17 @@ interface EpisodeDao {
     @Update
     fun update(episode: Episode)
 
+    @Query("DELETE FROM episodes")
+    fun deleteAll() // NUOVO: Per l'importazione
+
     fun save(episode: Episode) = getById(episode.id)
-        ?.let { update(episode) }
+        ?.let {
+            // Per preservare l'ID esistente e unire i campi rilevanti.
+            // La logica di merge effettiva è nel modello Episode.
+            val mergedEpisode = it.copy() // Crea una copia dell'entità dal DB
+            mergedEpisode.merge(episode)  // Unisci i dati dall'episodio in input
+            update(mergedEpisode)         // Aggiorna l'entità unita
+        }
         ?: insert(episode)
 
     @Query(

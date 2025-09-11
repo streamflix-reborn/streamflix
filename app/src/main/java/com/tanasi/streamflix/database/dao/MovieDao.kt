@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MovieDao {
 
+    @Query("SELECT * FROM movies")
+    fun getAll(): List<Movie> // NUOVO: Per l'esportazione
+
     @Query("SELECT * FROM movies WHERE id = :id")
     fun getById(id: String): Movie?
 
@@ -29,10 +32,16 @@ interface MovieDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(movie: Movie)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(movies: List<Movie>) // NUOVO: Per l'importazione
+
     @Update
     fun update(movie: Movie)
 
+    @Query("DELETE FROM movies")
+    fun deleteAll() // NUOVO: Per l'importazione
+
     fun save(movie: Movie) = getById(movie.id)
-        ?.let { update(movie) }
+        ?.let { update(movie.copy(id = it.id)) } // Assicurati che l'update usi l'ID corretto
         ?: insert(movie)
 }

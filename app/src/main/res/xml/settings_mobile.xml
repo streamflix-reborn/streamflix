@@ -10,7 +10,6 @@
             android:title="@string/settings_category_streamingcommunity_domain"
             android:inputType="text"/>
 
-        <!-- Spostato qui -->
         <PreferenceCategory
             android:key="pc_network_settings"
             android:title="@string/settings_category_network_title">
@@ -31,6 +30,23 @@
             android:defaultValue="true"
             android:summaryOn="@string/settings_autoplay_on"
             android:summaryOff="@string/settings_autoplay_off" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Backup e Ripristino"> <!-- TODO: Estrarre in strings.xml -->
+
+        <Preference
+            android:key="key_backup_export_mobile"
+            android:title="Esporta dati utente"
+            android:summary="Salva i tuoi dati (preferiti, cronologia visione) in un file."/>
+            <!-- TODO: Estrarre titolo e sommario in strings.xml -->
+
+        <Preference
+            android:key="key_backup_import_mobile"
+            android:title="Importa dati utente"
+            android:summary="Ripristina i tuoi dati da un file di backup."/>
+            <!-- TODO: Estrarre titolo e sommario in strings.xml -->
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/miscelaneous_title">

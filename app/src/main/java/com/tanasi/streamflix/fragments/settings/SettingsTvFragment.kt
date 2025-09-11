@@ -1,25 +1,72 @@
 package com.tanasi.streamflix.fragments.settings
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.leanback.preference.LeanbackPreferenceFragmentCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.SwitchPreference
 import androidx.preference.PreferenceCategory
-import com.tanasi.streamflix.R // Mantenuto per R.xml.settings_tv e altre preferenze
+import androidx.preference.SwitchPreference
+import com.tanasi.streamflix.R
+import com.tanasi.streamflix.backup.BackupRestoreManager
+import com.tanasi.streamflix.database.AppDatabase
+import com.tanasi.streamflix.database.dao.EpisodeDao
+import com.tanasi.streamflix.database.dao.MovieDao
+import com.tanasi.streamflix.database.dao.TvShowDao
 import com.tanasi.streamflix.providers.StreamingCommunityProvider
 import com.tanasi.streamflix.utils.UserPreferences
+import kotlinx.coroutines.launch
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
 
-    // Definizioni per i valori speciali
     private val DEFAULT_DOMAIN_VALUE = "streamingcommunityz.life"
-    private val PREFS_ERROR_VALUE = "PREFS_NOT_INIT_ERROR" // Usato per la logica del testo nel dialogo
+    private val PREFS_ERROR_VALUE = "PREFS_NOT_INIT_ERROR"
+
+    private lateinit var db: AppDatabase
+    private lateinit var movieDao: MovieDao
+    private lateinit var tvShowDao: TvShowDao
+    private lateinit var episodeDao: EpisodeDao
+    private lateinit var backupRestoreManager: BackupRestoreManager
+
+    private val exportBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let {
+            viewLifecycleOwner.lifecycleScope.launch {
+                performBackupExport(it)
+            }
+        }
+    }
+
+    private val importBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewLifecycleOwner.lifecycleScope.launch {
+                performBackupImport(it)
+            }
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings_tv, rootKey)
+
+        db = AppDatabase.getInstance(requireContext())
+        movieDao = db.movieDao()
+        tvShowDao = db.tvShowDao()
+        episodeDao = db.episodeDao()
+        backupRestoreManager = BackupRestoreManager(requireContext(), movieDao, tvShowDao, episodeDao)
+
         displaySettings()
     }
 
@@ -30,31 +77,16 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
 
         findPreference<EditTextPreference>("provider_streamingcommunity_domain")?.apply {
             val currentValue = UserPreferences.streamingcommunityDomain
-
-            // Imposta il sommario per mostrare sempre il valore corrente effettivo
             summary = currentValue
-
-            // Logica per il testo nel dialogo EditTextPreference
-            // Lascia vuoto se è il default o errore (per mostrare l'hint'),
-            // altrimenti pre-compila con il dominio personalizzato.
             if (currentValue == DEFAULT_DOMAIN_VALUE || currentValue == PREFS_ERROR_VALUE) {
                 text = null
             } else {
                 text = currentValue
             }
-
             setOnPreferenceChangeListener { preference, newValue ->
                 val newDomainFromDialog = newValue as String
-                // Aggiorna il valore nelle UserPreferences.
-                // Il setter in UserPreferences gestirà il caso di stringa vuota,
-                // reimpostando al valore di default.
                 UserPreferences.streamingcommunityDomain = newDomainFromDialog
-
-                // Aggiorna il sommario della preferenza per riflettere il valore effettivo
-                // (che potrebbe essere il default se newDomainFromDialog era vuoto).
                 preference.summary = UserPreferences.streamingcommunityDomain
-
-                // Logica di riavvio/ricostruzione del servizio
                 if (UserPreferences.currentProvider is StreamingCommunityProvider) {
                     (UserPreferences.currentProvider as StreamingCommunityProvider).rebuildService()
                     requireActivity().apply {
@@ -68,7 +100,7 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
 
         findPreference<Preference>("p_settings_about")?.apply {
             setOnPreferenceClickListener {
-                // TODO: Navigate to About screen for TV
+                Toast.makeText(requireContext(), "About screen for TV not yet implemented.", Toast.LENGTH_SHORT).show()
                 true
             }
         }
@@ -82,23 +114,19 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
         }
 
         findPreference<ListPreference>("p_doh_provider_url")?.apply {
-            value = UserPreferences.dohProviderUrl // Modificato: operatore Elvis rimosso
-            summary = entry // Imposta il sommario iniziale
-
+            value = UserPreferences.dohProviderUrl
+            summary = entry
             setOnPreferenceChangeListener { preference, newValue ->
                 val newUrl = newValue as String
                 UserPreferences.dohProviderUrl = newUrl
-
                 if (preference is ListPreference) {
                     val index = preference.findIndexOfValue(newUrl)
                     if (index >= 0 && preference.entries != null && index < preference.entries.size) {
                         preference.summary = preference.entries[index]
                     } else {
-                        preference.summary = null // o una stringa di default
+                        preference.summary = null
                     }
                 }
-
-                // Logica di riavvio/ricostruzione del servizio per DoH
                 if (UserPreferences.currentProvider is StreamingCommunityProvider) {
                     (UserPreferences.currentProvider as StreamingCommunityProvider).rebuildService()
                     requireActivity().apply {
@@ -120,21 +148,70 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
                 networkSettingsCategory.title = originalTitle
             }
         }
+
+        findPreference<Preference>("key_backup_export_tv")?.setOnPreferenceClickListener {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "streamflix_tv_backup_$timestamp.json"
+            exportBackupLauncher.launch(fileName)
+            true
+        }
+
+        findPreference<Preference>("key_backup_import_tv")?.setOnPreferenceClickListener {
+            importBackupLauncher.launch(arrayOf("application/json"))
+            true
+        }
+    }
+
+    private suspend fun performBackupExport(uri: Uri) {
+        val jsonData = backupRestoreManager.exportUserData()
+        if (jsonData != null) {
+            try {
+                requireContext().contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.writer().use { it.write(jsonData) }
+                    Toast.makeText(requireContext(), "Backup TV esportato con successo!", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: IOException) {
+                Toast.makeText(requireContext(), "Errore durante l'esportazione del backup TV.", Toast.LENGTH_LONG).show()
+                Log.e("BackupExportTV", "Error writing backup file", e)
+            }
+        } else {
+            Toast.makeText(requireContext(), "Errore: dati di backup TV non generati.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private suspend fun performBackupImport(uri: Uri) {
+        try {
+            val stringBuilder = StringBuilder()
+            requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
+                inputStream.bufferedReader().useLines { lines ->
+                    lines.forEach { stringBuilder.append(it) }
+                }
+            }
+            val jsonData = stringBuilder.toString()
+            if (jsonData.isNotBlank()) {
+                val success = backupRestoreManager.importUserData(jsonData)
+                if (success) {
+                    Toast.makeText(requireContext(), "Backup TV importato con successo! Si consiglia di riavviare l'app.", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(requireContext(), "Errore durante l'importazione del backup TV.", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                Toast.makeText(requireContext(), "Errore: file di backup TV vuoto o illeggibile.", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Errore durante la lettura o l'elaborazione del file di backup TV.", Toast.LENGTH_LONG).show()
+            Log.e("BackupImportTV", "Error reading/processing backup file", e)
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        // Aggiorna la visibilità della categoria StreamingCommunity
         findPreference<PreferenceCategory>("pc_streamingcommunity_settings")?.isVisible =
             UserPreferences.currentProvider is StreamingCommunityProvider
 
-        // Aggiorna il sommario e il testo del dialogo per il dominio StreamingCommunity
         findPreference<EditTextPreference>("provider_streamingcommunity_domain")?.apply {
             val currentValue = UserPreferences.streamingcommunityDomain
-            // Imposta il sommario per mostrare sempre il valore corrente effettivo
             summary = currentValue
-
-            // Logica per il testo nel dialogo EditTextPreference
             if (currentValue == DEFAULT_DOMAIN_VALUE || currentValue == PREFS_ERROR_VALUE) {
                 text = null
             } else {
@@ -142,7 +219,6 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
             }
         }
 
-        // Aggiorna visibilità e sommario DoH in onResume
         findPreference<ListPreference>("p_doh_provider_url")?.apply {
             summary = entry
         }
@@ -158,10 +234,11 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
             }
         }
         findPreference<SwitchPreference>("AUTOPLAY")?.isChecked = UserPreferences.autoplay
-        val bufferPref: EditTextPreference? = findPreference("p_settings_autoplay_buffer")
+        
+        val bufferPref: EditTextPreference? = findPreference("p_settings_autoplay_buffer") 
         bufferPref?.summaryProvider = Preference.SummaryProvider<EditTextPreference> { pref ->
             val value = pref.text?.toLongOrNull() ?: 3L
-            "$value s"
+            "$value s" // TODO: Estrarre "s" in strings.xml se necessario
         }
     }
 }
