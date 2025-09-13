@@ -172,7 +172,6 @@
     <string name="settings_about">Sobre</string>
     <string name="settings_about_version">Versión</string>
     <string name="settings_about_version_name">Versión %s</string>
-    <string name="settings_about_donate">Donar</string>
     <string name="settings_help">Ayuda</string>
     <string name="settings_category_streamingcommunity">Ajustes para StreamingCommunity</string>
     <string name="settings_category_streamingcommunity_domain">Ajustes para StreamingCommunity</string>

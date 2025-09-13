@@ -1,1 +1,0 @@
-package com.tanasi.streamflix.models.cinecalidad

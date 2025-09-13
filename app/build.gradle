@@ -20,18 +20,18 @@ dependencies {
 }
 
 android {
-    namespace 'com.tanasi.streamflix'
+    namespace 'com.streamflixreborn.streamflix'
     compileSdk 35
 
     def properties = new Properties()
     properties.load(project.rootProject.file('local.properties').newDataInputStream())
 
     defaultConfig {
-        applicationId "com.tanasi.streamflix"
+        applicationId "com.streamflixreborn.streamflix"
         minSdk 21
         targetSdk 35
-        versionCode 69
-        versionName "1.7.38"
+        versionCode 70
+        versionName "1.7.39"
 
         buildConfigField "String", "APP_LAYOUT", "\"${properties.getProperty("APP_LAYOUT")}\""
         buildConfigField "String", "TMDB_API_KEY", "\"${properties.getProperty("TMDB_API_KEY")}\""

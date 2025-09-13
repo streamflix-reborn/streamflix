@@ -7,7 +7,7 @@
     android:background="#000000"
     tools:context=".fragments.player.PlayerMobileFragment">
 
-    <com.tanasi.streamflix.ui.PlayerMobileView
+    <com.streamflixreborn.streamflix.ui.PlayerMobileView
         android:id="@+id/pv_player"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -23,7 +23,7 @@
         app:show_subtitle_button="true"
         app:show_timeout="2000" />
 
-    <com.tanasi.streamflix.fragments.player.settings.PlayerSettingsMobileView
+    <com.streamflixreborn.streamflix.fragments.player.settings.PlayerSettingsMobileView
         android:id="@+id/settings"
         android:layout_width="300dp"
         android:layout_height="0dp"
