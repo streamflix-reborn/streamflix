@@ -8,6 +8,7 @@ import com.streamflixreborn.streamflix.extractors.MyFileStorageExtractor
 import com.streamflixreborn.streamflix.extractors.TwoEmbedExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcNetExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcToExtractor
+import com.streamflixreborn.streamflix.extractors.VixSrcExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Genre
@@ -812,6 +813,7 @@ object TmdbProvider : Provider {
             MyFileStorageExtractor().nowTvServer(videoType),
             MoflixExtractor().server(videoType),
             VidsrcToExtractor().server(videoType),
+            VixSrcExtractor().server(videoType),
         )
 
         return servers
