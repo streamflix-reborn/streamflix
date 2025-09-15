@@ -21,7 +21,7 @@ object UserPreferences {
     // Default DoH Provider URL (Cloudflare)
     private const val DEFAULT_DOH_PROVIDER_URL = "https://cloudflare-dns.com/dns-query"
     const val DOH_DISABLED_VALUE = "" // Value to represent DoH being disabled
-    private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingcommunityz.online"
+    private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingcommunityz.cc"
 
     fun setup(context: Context) {
         Log.d(TAG, "setup() called with context: $context")
