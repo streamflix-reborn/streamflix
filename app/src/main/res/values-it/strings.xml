@@ -16,7 +16,7 @@
     <string name="app_layout_auto">Auto</string>
     <string name="app_layout_mobile">Mobile layout</string>
     <string name="app_layout_tv">TV layout</string>
-    <string name="app_layout_apply">Applica</string>
+    <string name="app_layout_apply">Applica</string> 
 
     <string name="providers_all_languages">Tutte le lingue</string>
     <string name="providers_choose_title">Scegli un provider</string>
@@ -189,6 +189,7 @@
     <string name="settings_about_version">Versione</string>
     <string name="settings_about_version_name">Versione %s</string>
     <string name="settings_help">Aiuto</string>
+    <string name="settings_telegram">Gruppo Telegram</string>
     <string name="settings_category_streamingcommunity">Impostazioni StreamingCommunity</string>
     <string name="settings_category_streamingcommunity_domain">Nome di dominio StreamingCommunity</string>
     <string name="settings_close_app">Chiudi applicazione</string>
@@ -211,4 +212,12 @@
     <string name="voice_prompt">Parla ora</string>
 
     <string name="watch_trailer_with">Guarda il trailer con...</string>
+    
+    <string name="backup_export_success">Backup esportato con successo!</string>
+    <string name="backup_export_error_write">Errore durante l\'esportazione del backup.</string>
+    <string name="backup_data_not_generated">Errore: dati di backup non generati.</string>
+    <string name="backup_import_success">Backup importato con successo! Riavvia l\'app per applicare le modifiche.</string>
+    <string name="backup_import_error">Errore durante l\'importazione del backup.</string>
+    <string name="backup_import_empty_file">Errore: file di backup vuoto o illeggibile.</string>
+    <string name="backup_import_read_error">Errore durante la lettura o l\'elaborazione del file di backup.</string>
 </resources>

@@ -51,6 +51,10 @@
 
     <PreferenceCategory android:title="@string/miscelaneous_title">
         <Preference
+            android:icon="@drawable/ic_telegram"
+            android:key="p_settings_telegram"
+            android:title="@string/settings_telegram" />
+        <Preference
             android:icon="@drawable/ic_settings_about"
             android:key="p_settings_about"
             android:title="@string/settings_about" />

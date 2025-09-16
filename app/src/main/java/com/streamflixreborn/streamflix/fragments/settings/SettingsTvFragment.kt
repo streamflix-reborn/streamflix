@@ -168,14 +168,14 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
             try {
                 requireContext().contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.writer().use { it.write(jsonData) }
-                    Toast.makeText(requireContext(), "Backup TV esportato con successo!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_export_success), Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
-                Toast.makeText(requireContext(), "Errore durante l'esportazione del backup TV.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.backup_export_error_write), Toast.LENGTH_LONG).show()
                 Log.e("BackupExportTV", "Error writing backup file", e)
             }
         } else {
-            Toast.makeText(requireContext(), "Errore: dati di backup TV non generati.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), getString(R.string.backup_data_not_generated), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -191,15 +191,15 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
             if (jsonData.isNotBlank()) {
                 val success = backupRestoreManager.importUserData(jsonData)
                 if (success) {
-                    Toast.makeText(requireContext(), "Backup TV importato con successo! Si consiglia di riavviare l'app.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_import_success), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(requireContext(), "Errore durante l'importazione del backup TV.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_import_error), Toast.LENGTH_LONG).show()
                 }
             } else {
-                Toast.makeText(requireContext(), "Errore: file di backup TV vuoto o illeggibile.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.backup_import_empty_file), Toast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Errore durante la lettura o l'elaborazione del file di backup TV.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), getString(R.string.backup_import_read_error), Toast.LENGTH_LONG).show()
             Log.e("BackupImportTV", "Error reading/processing backup file", e)
         }
     }

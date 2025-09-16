@@ -106,6 +106,20 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
             }
         }
 
+        // Telegram group (mobile only)
+        findPreference<Preference>("p_settings_telegram")?.apply {
+            setOnPreferenceClickListener {
+                val tgIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tg://resolve?domain=streamflixreborn"))
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/streamflixreborn"))
+                try {
+                    startActivity(tgIntent)
+                } catch (e: Exception) {
+                    startActivity(webIntent)
+                }
+                true
+            }
+        }
+
         // Rinominato per coerenza, se necessario provider_streamingcommunity_domain
         findPreference<EditTextPreference>("provider_streamingcommunity_domain")?.apply {
             summary = UserPreferences.streamingcommunityDomain
@@ -136,7 +150,6 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
                 true
             }
         }
-
 
         findPreference<ListPreference>("p_doh_provider_url")?.apply {
             value = UserPreferences.dohProviderUrl // Rimossa logica DOH_DISABLED_VALUE se non necessaria
@@ -169,6 +182,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("key_backup_export_mobile")?.setOnPreferenceClickListener {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "streamflix_mobile_backup_$timestamp.json"
+
             exportBackupLauncher.launch(fileName)
             true
         }
@@ -186,14 +200,14 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
             try {
                 requireContext().contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.writer().use { it.write(jsonData) }
-                    Toast.makeText(requireContext(), "Backup esportato con successo!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_export_success), Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
-                Toast.makeText(requireContext(), "Errore durante l'esportazione del backup.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.backup_export_error_write), Toast.LENGTH_LONG).show()
                 Log.e("BackupExportMobile", "Error writing backup file", e)
             }
         } else {
-            Toast.makeText(requireContext(), "Errore: dati di backup non generati.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), getString(R.string.backup_data_not_generated), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -209,15 +223,15 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
             if (jsonData.isNotBlank()) {
                 val success = backupRestoreManager.importUserData(jsonData)
                 if (success) {
-                    Toast.makeText(requireContext(), "Backup importato con successo! Riavvia l'app per applicare le modifiche.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_import_success), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(requireContext(), "Errore durante l'importazione del backup.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), getString(R.string.backup_import_error), Toast.LENGTH_LONG).show()
                 }
             } else {
-                Toast.makeText(requireContext(), "Errore: file di backup vuoto o illeggibile.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.backup_import_empty_file), Toast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Errore durante la lettura o l'elaborazione del file di backup.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), getString(R.string.backup_import_read_error), Toast.LENGTH_LONG).show()
             Log.e("BackupImportMobile", "Error reading/processing backup file", e)
         }
     }
@@ -235,7 +249,6 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         findPreference<ListPreference>("p_doh_provider_url")?.apply {
             summary = entry
         }
-
 
         // Mantenuto per p_settings_autoplay_buffer, se esiste ancora nel XML (non presente nell'ultimo XML mostrato)
         val bufferPref: EditTextPreference? = findPreference("p_settings_autoplay_buffer")

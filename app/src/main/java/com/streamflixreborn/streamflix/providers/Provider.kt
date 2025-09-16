@@ -61,6 +61,7 @@ interface Provider {
             DoramasflixProvider,
             CineCalidadProvider,
             FlixLatamProvider,
+            LaCartoonsProvider,
             AnimeBumProvider,
             AnimefenixProvider,
             AnimeFlvProvider,

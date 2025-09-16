@@ -14,10 +14,10 @@
 	<string name="update">تحديث</string>
 
 	<string name="app_layout">تخطيط التطبيق</string>
-	<string name="app_layout_auto">تلقائي</string>
-	<string name="app_layout_mobile">تخطيط الهاتف</string>
-	<string name="app_layout_tv">تخطيط التلفاز</string>
-	<string name="app_layout_apply">تطبيق</string>
+    <string name="app_layout_auto">تلقائي</string>
+    <string name="app_layout_mobile">تخطيط الهاتف</string>
+    <string name="app_layout_tv">تخطيط التلفاز</string>
+    <string name="app_layout_apply">تطبيق</string> 
 
 	<string name="providers_all_languages">كل اللغات</string>
 	<string name="providers_choose_title">اختر مزود الخدمة</string>
@@ -106,6 +106,7 @@
 	<string name="settings_about_version">الإصدار</string>
 	<string name="settings_about_version_name">الإصدار %s</string>
 	<string name="settings_help">مساعدة</string>
+	<string name="settings_telegram">مجموعة تيليجرام</string>
     <string name="settings_category_network_title">إعدادات الشبكة</string>
 	<string name="settings_autoplay">تشغيل الحلقة التالية تلقائيًا</string>
 	<string name="settings_autoplay_on">في</string>
@@ -123,5 +124,12 @@
 	<string name="voice_error_no_result">لم يتم اكتشاف أي إدخال صوتي.</string>
 	<string name="voice_prompt">تحدث الآن</string>
 
+	<string name="backup_export_success">تم تصدير النسخة الاحتياطية بنجاح!</string>
+	<string name="backup_export_error_write">حدث خطأ أثناء تصدير النسخة الاحتياطية.</string>
+	<string name="backup_data_not_generated">خطأ: لم يتم إنشاء بيانات النسخ الاحتياطي.</string>
+	<string name="backup_import_success">تم استيراد النسخة الاحتياطية بنجاح! أعد تشغيل التطبيق لتطبيق التغييرات.</string>
+	<string name="backup_import_error">حدث خطأ أثناء استيراد النسخة الاحتياطية.</string>
+	<string name="backup_import_empty_file">خطأ: ملف النسخة الاحتياطية فارغ أو غير قابل للقراءة.</string>
+	<string name="backup_import_read_error">حدث خطأ أثناء قراءة أو معالجة ملف النسخة الاحتياطية.</string>
 </resources>
 

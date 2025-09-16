@@ -15,7 +15,7 @@
     <string name="app_layout">App layout</string>
     <string name="app_layout_auto">Auto</string>
     <string name="app_layout_mobile">Mobile layout</string>
-    <string name="app_layout_tv">TV layout</string>
+    <string name="app_layout_tv">TV layout</string> 
     <string name="app_layout_apply">Apply</string>
 
     <string name="providers_all_languages">All languages</string>
@@ -189,6 +189,7 @@
     <string name="settings_about_version">Version</string>
     <string name="settings_about_version_name">Version %s</string>
     <string name="settings_help">Help</string>
+    <string name="settings_telegram">Telegram group</string>
     <string name="settings_category_streamingcommunity">StreamingCommunity settings</string>
     <string name="settings_category_streamingcommunity_domain">StreamingCommunity domain name</string>
     <string name="settings_close_app">Close app</string>
@@ -214,4 +215,12 @@
     <string name="watch_trailer_with">Watch trailer with...</string>
     <string name="youtube">YouTube</string>
     <string name="smarttube">SmartTube</string>
+    
+    <string name="backup_export_success">Backup exported successfully!</string>
+    <string name="backup_export_error_write">Error while exporting the backup.</string>
+    <string name="backup_data_not_generated">Error: backup data not generated.</string>
+    <string name="backup_import_success">Backup imported successfully! Restart the app to apply changes.</string>
+    <string name="backup_import_error">Error while importing the backup.</string>
+    <string name="backup_import_empty_file">Error: backup file is empty or unreadable.</string>
+    <string name="backup_import_read_error">Error while reading or processing the backup file.</string>
 </resources>

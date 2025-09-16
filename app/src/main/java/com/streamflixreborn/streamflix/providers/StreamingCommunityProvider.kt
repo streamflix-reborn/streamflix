@@ -19,6 +19,9 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import okhttp3.dnsoverhttps.DnsOverHttps
+import okhttp3.Dns
+import java.net.InetAddress
+import java.net.UnknownHostException
 import okhttp3.logging.HttpLoggingInterceptor // Import aggiunto
 import org.json.JSONObject
 import org.jsoup.nodes.Document
@@ -479,6 +482,16 @@ object StreamingCommunityProvider : Provider {
         }
     }
 
+    private class RefererInterceptor(private val referer: String) : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            val original = chain.request()
+            val request = original.newBuilder()
+                .header("Referer", referer)
+                .build()
+            return chain.proceed(request)
+        }
+    }
+
     private class RedirectInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val response = chain.proceed(chain.request())
@@ -489,6 +502,32 @@ object StreamingCommunityProvider : Provider {
                     .substringBefore("/")
             }
             return response
+        }
+    }
+
+    // Retry HTTP 409 with short backoff
+    private class RetryOn409Interceptor : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            var attempt = 0
+            var lastException: Exception? = null
+            while (attempt < 2) {
+                try {
+                    val response = chain.proceed(chain.request())
+                    if (response.code != 409) {
+                        return response
+                    }
+                    response.close()
+                    // short backoff
+                    try { Thread.sleep(350L * (attempt + 1)) } catch (_: InterruptedException) {}
+                    attempt++
+                    continue
+                } catch (e: Exception) {
+                    lastException = e
+                    break
+                }
+            }
+            // Final attempt without further retries
+            return chain.proceed(chain.request())
         }
     }
 
@@ -504,20 +543,47 @@ object StreamingCommunityProvider : Provider {
                 val clientBuilder = OkHttpClient.Builder()
                     .readTimeout(30, TimeUnit.SECONDS)
                     .connectTimeout(30, TimeUnit.SECONDS)
+                    .addInterceptor(RefererInterceptor(baseUrl))
                     .addInterceptor(UserAgentInterceptor(USER_AGENT))
                     .addNetworkInterceptor(RedirectInterceptor())
-                    .addInterceptor(logging) // Aggiunto HttpLoggingInterceptor
+                    .addInterceptor(logging) // Aggiunto HttpLoggingInterceptor 
+                    .addInterceptor(RetryOn409Interceptor())
 
                 val dohProviderUrl = UserPreferences.dohProviderUrl
                 if (dohProviderUrl.isNotEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {
                     try {
-                        val bootstrapClient = OkHttpClient.Builder().build()
-                        val dohDns = DnsOverHttps.Builder().client(bootstrapClient)
+                        val bootstrap = OkHttpClient.Builder()
+                            .readTimeout(15, TimeUnit.SECONDS)
+                            .connectTimeout(15, TimeUnit.SECONDS)
+                            .build()
+
+                        val primaryDoh = DnsOverHttps.Builder().client(bootstrap)
                             .url(dohProviderUrl.toHttpUrl())
                             .build()
-                        clientBuilder.dns(dohDns)
+
+                        // Google DoH as secondary fallback
+                        val googleDoh = DnsOverHttps.Builder().client(bootstrap)
+                            .url("https://dns.google/dns-query".toHttpUrl())
+                            .build()
+
+                        // Fallback: primary → Google DoH
+                        clientBuilder.dns(object : Dns {
+                            override fun lookup(hostname: String): List<InetAddress> {
+                                try { return primaryDoh.lookup(hostname) } catch (_: UnknownHostException) {}
+                                try { return googleDoh.lookup(hostname) } catch (_: UnknownHostException) {}
+                                throw UnknownHostException("DoH resolution failed for $hostname (primary and Google)")
+                            }
+                        })
                     } catch (_: IllegalArgumentException) {
-                        // Handle invalid URL, maybe log or fallback
+                        // Invalid DoH URL: fallback to Google DoH only
+                        val bootstrap = OkHttpClient.Builder()
+                            .readTimeout(15, TimeUnit.SECONDS)
+                            .connectTimeout(15, TimeUnit.SECONDS)
+                            .build()
+                        val googleDoh = DnsOverHttps.Builder().client(bootstrap)
+                            .url("https://dns.google/dns-query".toHttpUrl())
+                            .build()
+                        clientBuilder.dns(googleDoh)
                     }
                 }
 

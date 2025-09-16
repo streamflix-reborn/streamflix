@@ -16,7 +16,7 @@
     <string name="app_layout_auto">Automatisch</string>
     <string name="app_layout_mobile">Mobiles Layout</string>
     <string name="app_layout_tv">TV Layout</string>
-    <string name="app_layout_apply">Anwenden</string>
+    <string name="app_layout_apply">Anwenden</string> 
 
     <string name="providers_all_languages">Alle Sprachen</string>
     <string name="providers_choose_title">Anbieter auswählen</string>
@@ -189,6 +189,7 @@
     <string name="settings_about_version">Version</string>
     <string name="settings_about_version_name">Version %s</string>
     <string name="settings_help">Hilfe</string>
+    <string name="settings_telegram">Telegram‑Gruppe</string>
     <string name="settings_category_streamingcommunity">StreamingCommunity - Einstellungen</string>
     <string name="settings_category_streamingcommunity_domain">StreamingCommunity - Domain-Name</string>
     <string name="settings_close_app">App schließen</string>
@@ -210,4 +211,11 @@
     <string name="voice_error_no_result">Es wurde keine Spracheingabe erkannt.</string>
     <string name="voice_prompt">Sprich jetzt</string>
 
+    <string name="backup_export_success">Sicherung erfolgreich exportiert!</string>
+    <string name="backup_export_error_write">Fehler beim Export der Sicherung.</string>
+    <string name="backup_data_not_generated">Fehler: Sicherungsdaten wurden nicht erstellt.</string>
+    <string name="backup_import_success">Sicherung erfolgreich importiert! Starte die App neu, um die Änderungen anzuwenden.</string>
+    <string name="backup_import_error">Fehler beim Import der Sicherung.</string>
+    <string name="backup_import_empty_file">Fehler: Die Sicherungsdatei ist leer oder unlesbar.</string>
+    <string name="backup_import_read_error">Fehler beim Lesen oder Verarbeiten der Sicherungsdatei.</string>
 </resources>
