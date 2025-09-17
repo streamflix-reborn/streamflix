@@ -22,6 +22,7 @@ import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Url
 import java.io.File
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 object LaCartoonsProvider : Provider {
@@ -92,16 +93,26 @@ object LaCartoonsProvider : Provider {
     }
 
     override suspend fun search(query: String, page: Int): List<AppAdapter.Item> {
-        if (query.isNotBlank()) return emptyList()
-        // Return categories from botontes-categorias as Genres
+        if (query.isBlank()) {
+            // Return categories from botontes-categorias as Genres
+            return try {
+                val doc = service.getPage(baseUrl)
+                val genres = doc.select("ul.botontes-categorias li form").mapNotNull { form ->
+                    val value = form.selectFirst("input[name=Categoria_id]")?.attr("value") ?: return@mapNotNull null
+                    val name = form.selectFirst("input[type=submit]")?.attr("value") ?: return@mapNotNull null
+                    Genre(id = value, name = name)
+                }
+                genres
+            } catch (_: Exception) { emptyList() }
+        }
+
+        // Title search: site returns all results; return them all on page 1, none afterwards
         return try {
-            val doc = service.getPage(baseUrl)
-            val genres = doc.select("ul.botontes-categorias li form").mapNotNull { form ->
-                val value = form.selectFirst("input[name=Categoria_id]")?.attr("value") ?: return@mapNotNull null
-                val name = form.selectFirst("input[type=submit]")?.attr("value") ?: return@mapNotNull null
-                Genre(id = value, name = name)
-            }
-            genres
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = "$baseUrl/?utf8=%E2%9C%93&Titulo=$encoded"
+            val doc = service.getPage(url)
+            val all = parseHomeShows(doc)
+            if (page > 1) emptyList() else all
         } catch (_: Exception) { emptyList() }
     }
 
@@ -109,7 +120,8 @@ object LaCartoonsProvider : Provider {
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
         return try {
-            val doc = service.getPage(baseUrl)
+            val url = if (page <= 1) baseUrl else "$baseUrl/?page=$page"
+            val doc = service.getPage(url)
             parseHomeShows(doc)
         } catch (_: Exception) { emptyList() }
     }
@@ -123,7 +135,9 @@ object LaCartoonsProvider : Provider {
         val doc = service.getPage(url)
 
         val posterUrl = doc.selectFirst("div.contenedor-informacion-serie img")?.attr("src").orEmpty()
-        val title = doc.selectFirst("p.nombre-serie")?.text() ?: doc.selectFirst("h1,h2,h3")?.text().orEmpty()
+        val title = doc.selectFirst("h2.subtitulo-serie-seccion")?.ownText()?.trim()
+            ?: doc.selectFirst("p.nombre-serie")?.text()?.trim()
+            ?: doc.selectFirst("h1,h2,h3")?.text()?.trim().orEmpty()
         val infoSection = doc.selectFirst("div.informacion-serie-seccion")
         val overview = infoSection?.select("p")?.firstOrNull { it.text().startsWith("Reseña") }
             ?.selectFirst("span")?.text()
@@ -196,10 +210,16 @@ object LaCartoonsProvider : Provider {
 
     override suspend fun getGenre(id: String, page: Int): Genre {
         return try {
-            val url = "$baseUrl/?Categoria_id=$id"
+            // Resolve human-readable category name from homepage forms
+            val home = service.getPage(baseUrl)
+            val name = home.select("ul.botontes-categorias li form").firstOrNull { form ->
+                form.selectFirst("input[name=Categoria_id]")?.attr("value") == id
+            }?.selectFirst("input[type=submit]")?.attr("value") ?: id
+
+            val url = if (page <= 1) "$baseUrl/?Categoria_id=$id" else "$baseUrl/?Categoria_id=$id&page=$page"
             val doc = service.getPage(url)
             val shows = parseHomeShows(doc)
-            Genre(id = id, name = id, shows = shows)
+            Genre(id = id, name = name, shows = shows)
         } catch (_: Exception) { Genre(id = id, name = id, shows = emptyList()) }
     }
 
