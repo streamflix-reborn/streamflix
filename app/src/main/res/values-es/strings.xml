@@ -62,7 +62,7 @@
     <string name="people_birthday">Fecha de nacimiento</string>
     <string name="people_deathday">Fecha de deceso</string>
     <string name="people_birthplace">Lugar de nacimiento</string>
-    <string name="people_biography">Bipgrafía</string>
+    <string name="people_biography">Biografía</string>
     <string name="people_read_more">Leer más ></string>
     <string name="genre_header_name">%s Películas y Series</string>
     <string name="player_subtitle_tv_show">T%d E%d • %s</string>
