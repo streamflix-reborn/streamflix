@@ -10,7 +10,7 @@
     <string name="update_release_notes">Notas de la versión</string>
     <string name="update_later">Más tarde</string>
     <string name="update">Actualizar</string>
-    <string name="app_layout">"Diseño de la aplicación</string>
+    <string name="app_layout">Diseño de la aplicación</string>
     <string name="app_layout_auto">Automático</string>
     <string name="app_layout_mobile">Diseño para móviles</string>
     <string name="app_layout_tv">Diseño para TV</string>
