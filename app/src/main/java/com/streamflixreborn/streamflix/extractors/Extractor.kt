@@ -66,6 +66,7 @@ abstract class Extractor {
             VidGuardExtractor(),
             OkruExtractor(),
             VixSrcExtractor(),
+            GoodstreamExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {

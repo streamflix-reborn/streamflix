@@ -193,7 +193,7 @@ object CineCalidadProvider : Provider {
     override suspend fun getMovie(id: String): Movie {
         val document = service.getPage(id)
 
-        val title = document.selectFirst("h1")?.text() ?: ""
+        val title = document.selectFirst(".single_left h1")?.text() ?: ""
         val poster = document.selectFirst(".single_left table img")?.attr("data-src")
 
         val detailsTd = document.selectFirst(".single_left td[style*=justify]")
@@ -216,6 +216,10 @@ object CineCalidadProvider : Provider {
             }
         }
 
+        // Extract trailer URL
+        val trailer = document.selectFirst("#playeroptionsul li.dooplay_player_option_trailer[data-option]")
+            ?.attr("data-option")
+
         return Movie(
             id = id,
             title = title,
@@ -223,14 +227,15 @@ object CineCalidadProvider : Provider {
             overview = overview,
             rating = rating,
             genres = genres,
-            cast = cast
+            cast = cast,
+            trailer = trailer
         )
     }
 
     override suspend fun getTvShow(id: String): TvShow {
         val document = service.getPage(id)
 
-        val title = document.selectFirst("h1")?.text() ?: ""
+        val title = document.selectFirst(".single_left h1")?.text() ?: ""
         val poster = document.selectFirst(".single_left table img")?.attr("data-src")
 
         val detailsTd = document.selectFirst(".single_left td[style*=justify]")
@@ -265,6 +270,23 @@ object CineCalidadProvider : Provider {
             )
         }
 
+        // Extract trailer URL for TV show: parse inline script setting #trailerazo.src
+        val trailer = run {
+            val scriptData = document.select("script").map { it.data() }
+            scriptData.firstNotNullOfOrNull { js ->
+                if (js.contains("#trailerazo") && js.contains(".src")) {
+                    js.lineSequence()
+                        .firstOrNull { line -> line.contains("#trailerazo") && line.contains(".src") }
+                        ?.let { line ->
+                            Regex("""['"]https?://[^'\"]+['"]""")
+                                .find(line)
+                                ?.value
+                                ?.trim('"', '\'')
+                        }
+                } else null
+            }
+        }
+
         return TvShow(
             id = id,
             title = title,
@@ -273,7 +295,8 @@ object CineCalidadProvider : Provider {
             rating = rating,
             genres = genres,
             cast = cast,
-            seasons = seasons
+            seasons = seasons,
+            trailer = trailer
         )
     }
 
@@ -303,6 +326,11 @@ object CineCalidadProvider : Provider {
             val document = service.getPage(id)
 
             document.select("#playeroptionsul li[data-option]")
+                .filterNot { element ->
+                    // Exclude trailer option
+                    element.hasClass("dooplay_player_option_trailer") || 
+                    element.text().contains("trailer", ignoreCase = true)
+                }
                 .map { element ->
                     val serverUrl = element.attr("data-option")
                     val serverName = element.text()
@@ -341,6 +369,33 @@ object CineCalidadProvider : Provider {
     }
 
     override suspend fun getPeople(id: String, page: Int): People {
-        throw Exception("getPeople not implemented")
+        val targetUrl = run {
+            val cleanId = id.removePrefix(baseUrl).trim('/')
+            val base = if (id.startsWith("http")) id.trimEnd('/') else "$baseUrl/${cleanId}"
+            if (page > 1) "$base/page/$page" else base
+        }
+
+        return try {
+            val document = service.getPage(targetUrl)
+
+            val name = document.selectFirst("#contenedor .module .content.right.normal h1 span")
+                ?.text()
+                ?: document.selectFirst(".single_left h1")?.text()
+                ?: document.selectFirst("h1")?.text()
+                ?: ""
+
+            val image = null
+
+            val filmographyShows = parseShows(document.select("article.item[id^=post-]"))
+
+            People(
+                id = id,
+                name = name,
+                image = image,
+                filmography = filmographyShows
+            )
+        } catch (e: Exception) {
+            People(id = id, name = "", filmography = emptyList())
+        }
     }
 }
