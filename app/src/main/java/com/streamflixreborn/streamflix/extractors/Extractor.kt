@@ -67,6 +67,7 @@ abstract class Extractor {
             OkruExtractor(),
             VixSrcExtractor(),
             GoodstreamExtractor(),
+            LamovieExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {
