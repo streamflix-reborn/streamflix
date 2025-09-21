@@ -3,8 +3,8 @@ package com.streamflixreborn.streamflix.fragments.providers
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.streamflixreborn.streamflix.models.Provider
-import com.streamflixreborn.streamflix.providers.Provider.Companion.providers
+import com.streamflixreborn.streamflix.models.Provider as ModelProvider
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +18,7 @@ class ProvidersViewModel : ViewModel() {
 
     sealed class State {
         data object Loading : State()
-        data class SuccessLoading(val providers: List<Provider>) : State()
+        data class SuccessLoading(val providers: List<ModelProvider>) : State()
         data class FailedLoading(val error: Exception) : State()
     }
 
@@ -31,11 +31,11 @@ class ProvidersViewModel : ViewModel() {
         _state.emit(State.Loading)
 
         try {
-            val providers = providers
+            val providers = Provider.providers.keys
                 .filter { language == null || it.language == language }
                 .sortedBy { it.name }
                 .map {
-                    Provider(
+                    ModelProvider(
                         name = it.name,
                         logo = it.logo,
                         language = it.language,

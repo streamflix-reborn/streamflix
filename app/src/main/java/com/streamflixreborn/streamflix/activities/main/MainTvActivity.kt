@@ -23,6 +23,7 @@ import com.streamflixreborn.streamflix.databinding.ActivityMainTvBinding
 import com.streamflixreborn.streamflix.databinding.ContentHeaderMenuMainTvBinding
 import com.streamflixreborn.streamflix.fragments.player.PlayerTvFragment
 import com.streamflixreborn.streamflix.ui.UpdateAppTvDialog
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import kotlinx.coroutines.launch
@@ -68,6 +69,9 @@ class MainTvActivity : FragmentActivity() {
         }
 
         binding.navMain.setupWithNavController(navController)
+        
+        // Hide tabs not supported by the provider
+        updateNavigationVisibility()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             binding.navMainFragment.isFocusedByDefault = true
@@ -105,7 +109,11 @@ class MainTvActivity : FragmentActivity() {
                 R.id.home,
                 R.id.movies,
                 R.id.tv_shows,
-                R.id.settings -> binding.navMain.visibility = View.VISIBLE
+                R.id.settings -> {
+                    binding.navMain.visibility = View.VISIBLE
+                    // Update tab visibility based on provider
+                    updateNavigationVisibility()
+                }
                 else -> binding.navMain.visibility = View.GONE
             }
         }
@@ -177,5 +185,17 @@ class MainTvActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.checkUpdate()
+    }
+    
+    private fun updateNavigationVisibility() {
+        UserPreferences.currentProvider?.let { provider ->
+            // Hide Movies tab if provider doesn't support movies
+            binding.navMain.findViewById<View>(R.id.movies)?.visibility = 
+                if (Provider.supportsMovies(provider)) View.VISIBLE else View.GONE
+            
+            // Hide TV Shows tab if provider doesn't support TV shows
+            binding.navMain.findViewById<View>(R.id.tv_shows)?.visibility = 
+                if (Provider.supportsTvShows(provider)) View.VISIBLE else View.GONE
+        }
     }
 }

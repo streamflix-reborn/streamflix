@@ -68,6 +68,7 @@ abstract class Extractor {
             VixSrcExtractor(),
             GoodstreamExtractor(),
             LamovieExtractor(),
+            UqloadExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {

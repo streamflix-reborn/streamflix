@@ -16,8 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.databinding.FragmentProvidersMobileBinding
-import com.streamflixreborn.streamflix.models.Provider
-import com.streamflixreborn.streamflix.providers.Provider.Companion.providers
+import com.streamflixreborn.streamflix.models.Provider as ModelProvider
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.dp
@@ -91,7 +91,7 @@ class ProvidersMobileFragment : Fragment() {
                 val name: String,
             )
 
-            val languages = providers
+            val languages = Provider.providers.keys
                 .distinctBy { it.language }
                 .map {
                     val locale = Locale(it.language)
@@ -152,7 +152,7 @@ class ProvidersMobileFragment : Fragment() {
         }
     }
 
-    private fun displayProviders(providers: List<Provider>) {
+    private fun displayProviders(providers: List<ModelProvider>) {
         appAdapter.submitList(providers.onEach {
             it.itemType = AppAdapter.Type.PROVIDER_MOBILE_ITEM
         })

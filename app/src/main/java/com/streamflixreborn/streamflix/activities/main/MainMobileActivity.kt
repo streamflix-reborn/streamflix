@@ -19,6 +19,7 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
 import com.streamflixreborn.streamflix.fragments.player.PlayerMobileFragment
 import com.streamflixreborn.streamflix.ui.UpdateAppMobileDialog
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import kotlinx.coroutines.launch
@@ -71,6 +72,9 @@ class MainMobileActivity : FragmentActivity() {
             navController.popBackStack(item.itemId, inclusive = true)
             navController.navigate(item.itemId)
         }
+        
+        // Hide tabs not supported by the provider
+        updateNavigationVisibility()
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
@@ -78,7 +82,11 @@ class MainMobileActivity : FragmentActivity() {
                 R.id.home,
                 R.id.movies,
                 R.id.tv_shows,
-                R.id.settings -> binding.bnvMain.visibility = View.VISIBLE
+                R.id.settings -> {
+                    binding.bnvMain.visibility = View.VISIBLE
+                    // Update tab visibility based on provider
+                    updateNavigationVisibility()
+                }
                 else -> binding.bnvMain.visibility = View.GONE
             }
         }
@@ -135,6 +143,18 @@ class MainMobileActivity : FragmentActivity() {
 
         when (val currentFragment = getCurrentFragment()) {
             is PlayerMobileFragment -> currentFragment.onUserLeaveHint()
+        }
+    }
+    
+    private fun updateNavigationVisibility() {
+        UserPreferences.currentProvider?.let { provider ->
+            // Hide Movies tab if provider doesn't support movies
+            binding.bnvMain.findViewById<View>(R.id.movies)?.visibility = 
+                if (Provider.supportsMovies(provider)) View.VISIBLE else View.GONE
+            
+            // Hide TV Shows tab if provider doesn't support TV shows
+            binding.bnvMain.findViewById<View>(R.id.tv_shows)?.visibility = 
+                if (Provider.supportsTvShows(provider)) View.VISIBLE else View.GONE
         }
     }
 }

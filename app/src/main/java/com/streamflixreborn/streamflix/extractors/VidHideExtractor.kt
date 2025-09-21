@@ -17,7 +17,9 @@ class VidHideExtractor: Extractor() {
 
     override val aliasUrls = listOf(
         "https://peytonepre.com",
-        "https://vidhideplus.com/"
+        "https://vidhideplus.com/",
+        "https://mivalyo",
+        "https://dinisglows",
     )
 
     companion object {
@@ -49,8 +51,16 @@ class VidHideExtractor: Extractor() {
             }
 
         val finalUrl = links["hls4"] ?: links["hls2"] ?: throw Exception("No HLS link found")
+        
+        // Add domain if the URL starts with "/"
+        val completeUrl = if (finalUrl.startsWith("/")) {
+            val baseUrl = URL(link).protocol + "://" + URL(link).host
+            baseUrl + finalUrl
+        } else {
+            finalUrl
+        }
 
-        return Video(source = finalUrl)
+        return Video(source = completeUrl)
     }
 
     private interface Service {

@@ -8,6 +8,7 @@ import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.People
+import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import okhttp3.Cache
@@ -91,9 +92,34 @@ object FilmPalastProvider : Provider {
                 poster = fullPosterUrl
             )
         }
+        val tvShowsDocument = service.getTvShowsHome()
+        val tvShows = tvShowsDocument.select("div#content article").map { article ->
+            val href = article.selectFirst("h2 a")?.attr("href") ?: ""
+            val title = article.selectFirst("h2 a")?.text() ?: ""
+            val posterSrc = article.selectFirst("a img")?.attr("src") ?: ""
+
+            val fullPosterUrl = if (posterSrc.startsWith("/")) {
+                "https://filmpalast.to$posterSrc"
+            } else {
+                posterSrc
+            }
+
+            val info = article.select("*").toInfo()
+                
+                TvShow(
+                id = href.substringAfterLast("/"),
+                    title = title,
+                    released = info.released,
+                    quality = info.quality,
+                    rating = info.rating ?: 0.0,
+                    poster = fullPosterUrl
+                )
+        }
+
         return listOf(
             Category(name = "Featured", list = featured),
-            Category(name = "Filme", list = main_content)
+            Category(name = "Filme", list = main_content),
+            Category(name = "Serien", list = tvShows)
         )
     }
 
@@ -118,7 +144,7 @@ object FilmPalastProvider : Provider {
             }
         }
 
-        val movies = document.select("div#content article").map { article ->
+        val results = document.select("div#content article").map { article ->
             val href = article.selectFirst("h2 a")?.attr("href") ?: ""
             val title = article.selectFirst("h2 a")?.text() ?: ""
             val posterSrc = article.selectFirst("a img")?.attr("src") ?: ""
@@ -131,6 +157,19 @@ object FilmPalastProvider : Provider {
 
             val info = article.select("*").toInfo()
 
+            // Determine if it's a movie or TV show based on season/episode info in title
+            val isTvShow = title.matches(Regex(".*S\\d+E\\d+.*"))
+            
+            if (isTvShow) {
+                TvShow(
+                    id = href.substringAfterLast("/"),
+                    title = title,
+                    released = info.released,
+                    quality = info.quality,
+                    rating = info.rating ?: 0.0,
+                    poster = fullPosterUrl
+                )
+            } else {
             Movie(
                 id = href.substringAfterLast("/"),
                 title = title,
@@ -139,9 +178,15 @@ object FilmPalastProvider : Provider {
                 rating = info.rating ?: 0.0,
                 poster = fullPosterUrl
             )
-        }.distinctBy { it.id }
+            }
+        }.distinctBy { 
+            when (it) {
+                is Movie -> it.id
+                is TvShow -> it.id
+            }
+        }
 
-        return movies
+        return results
 
     }
 
@@ -259,11 +304,95 @@ object FilmPalastProvider : Provider {
     }
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
-        throw Exception("Serien nicht implementiert")
+        val document = service.getTvShows(page)
+        val shows = document.select("div#content article").map { article ->
+            val href = article.selectFirst("h2 a")?.attr("href") ?: ""
+            val title = article.selectFirst("h2 a")?.text() ?: ""
+            val posterSrc = article.selectFirst("a img")?.attr("src") ?: ""
+
+            val fullPosterUrl = if (posterSrc.startsWith("/")) {
+                "https://filmpalast.to$posterSrc"
+            } else {
+                posterSrc
+            }
+
+            val info = article.select("*").toInfo()
+                
+                TvShow(
+                id = href.substringAfterLast("/"),
+                    title = title,
+                    released = info.released,
+                    quality = info.quality,
+                    rating = info.rating ?: 0.0,
+                    poster = fullPosterUrl
+                )
+            }
+        return shows
     }
 
     override suspend fun getTvShow(id: String): TvShow {
-        throw Exception("Serien nicht implementiert")
+        val relativeId = BASE_URL + "stream/" + id
+        val document = service.getTvShow(relativeId)
+        val title = document.selectFirst("h2")?.text() ?: ""
+        val poster = document.selectFirst("img.cover2")?.attr("src")?.let {
+            if (it.startsWith("http")) it else "${BASE_URL.removeSuffix("/")}$it"
+        }
+        val description = document.selectFirst("span[itemprop=description]")?.text()
+        val rating = document.selectFirst("div#star-rate")?.attr("data-rating")?.toDoubleOrNull()
+        val genres = document.select("ul#detail-content-list > li:has(p:matchesOwn(Kategorien, Genre)) a")
+            .map { Genre(id = it.text().trim(), name = it.text().trim()) }
+        val directors = document.select("ul#detail-content-list > li:has(p:matchesOwn(Regie)) a")
+            .map { People(id = it.text().trim(), name = it.text().trim()) }
+        val actors = document.select("ul#detail-content-list > li:has(p:matchesOwn(Schauspieler)) a")
+            .map { People(id = it.text().trim(), name = it.text().trim()) }
+
+        // Parse seasons and episodes
+        val seasons = mutableListOf<Season>()
+        
+        document.select("div#staffelWrapper div.staffelWrapperLoop").forEachIndexed { seasonIndex, seasonBlock ->
+            val seasonNumber = seasonIndex + 1
+            val seasonId = seasonBlock.attr("data-sid").takeIf { it.isNotEmpty() } ?: seasonNumber.toString()
+            val episodes = mutableListOf<Episode>()
+            
+            seasonBlock.select("ul.staffelEpisodenList li a.getStaffelStream").forEachIndexed { episodeIndex, episodeLink ->
+                val epTitle = episodeLink.ownText().trim()
+                val epHref = episodeLink.attr("href")
+                val fullEpHref = if (epHref.startsWith("//")) {
+                    "https:$epHref"
+                } else {
+                    epHref
+                }
+                val epId = fullEpHref.substringAfterLast("/")
+                
+                episodes.add(
+                Episode(
+                        id = epId,
+                        number = episodeIndex + 1,
+                        title = epTitle
+                    )
+                )
+            }
+            
+            seasons.add(
+            Season(
+                    id = "${id}_$seasonNumber",
+                number = seasonNumber,
+                episodes = episodes
+                )
+            )
+        }
+
+        return TvShow(
+            id = id,
+            title = title,
+            poster = poster,
+            genres = genres,
+            directors = directors,
+            cast = actors,
+            rating = rating,
+            overview = description,
+            seasons = seasons
+        )
     }
 
     override suspend fun getGenre(id: String, page: Int): Genre {
@@ -301,8 +430,96 @@ object FilmPalastProvider : Provider {
     }
 
 
-    override suspend fun getEpisodesBySeason(seasonId: String) = emptyList<Episode>()
-    override suspend fun getPeople(id: String, page: Int) = People(id, "")
+    override suspend fun getEpisodesBySeason(seasonId: String): List<Episode> {
+        val parts = seasonId.split("_")
+        if (parts.size != 2) return emptyList()
+        
+        val showId = parts[0]
+        val seasonNumber = parts[1].toIntOrNull() ?: return emptyList()
+        
+        val relativeId = BASE_URL + "stream/" + showId
+        val document = service.getTvShow(relativeId)
+        
+        val episodes = mutableListOf<Episode>()
+        
+        document.select("div#staffelWrapper div.staffelWrapperLoop").forEachIndexed { index, seasonBlock ->
+            if (index + 1 == seasonNumber) {
+                seasonBlock.select("ul.staffelEpisodenList li a.getStaffelStream").forEachIndexed { episodeIndex, episodeLink ->
+                    val epTitle = episodeLink.ownText().trim()
+                    val epHref = episodeLink.attr("href")
+                    val fullEpHref = if (epHref.startsWith("//")) {
+                        "https:$epHref"
+                    } else {
+                        epHref
+                    }
+                    val epId = fullEpHref.substringAfterLast("/")
+                    
+                    episodes.add(
+                        Episode(
+                            id = epId,
+                            number = episodeIndex + 1,
+                            title = epTitle
+                        )
+                    )
+                }
+            }
+        }
+        
+        return episodes
+    }
+    override suspend fun getPeople(id: String, page: Int): People {
+        val url = "$BASE_URL/search/title/$id"
+        val document = service.getPeoplePage(url)
+        val name = document.selectFirst("h1")?.text() ?: ""
+        val image = document.selectFirst("img.cover2")?.attr("src")?.let {
+            if (it.startsWith("http")) it else "${BASE_URL.removeSuffix("/")}$it"
+        }
+        
+        // Parse filmography (same structure as movies/series)
+        val filmography = document.select("div#content article").map { article ->
+            val href = article.selectFirst("h2 a")?.attr("href") ?: ""
+            val title = article.selectFirst("h2 a")?.text() ?: ""
+            val posterSrc = article.selectFirst("a img")?.attr("src") ?: ""
+
+            val fullPosterUrl = if (posterSrc.startsWith("/")) {
+                "https://filmpalast.to$posterSrc"
+            } else {
+                posterSrc
+            }
+
+            val info = article.select("*").toInfo()
+
+            // Determine if it's a movie or TV show based on season/episode info in title
+            val isTvShow = title.matches(Regex(".*S\\d+E\\d+.*"))
+            
+            if (isTvShow) {
+                TvShow(
+                    id = href.substringAfterLast("/"),
+                    title = title,
+                    released = info.released,
+                    quality = info.quality,
+                    rating = info.rating ?: 0.0,
+                    poster = fullPosterUrl
+                )
+            } else {
+                Movie(
+                    id = href.substringAfterLast("/"),
+                    title = title,
+                    released = info.released,
+                    quality = info.quality,
+                    rating = info.rating ?: 0.0,
+                    poster = fullPosterUrl
+                )
+            }
+        }
+        
+        return People(
+            id = id,
+            name = name,
+            image = image,
+            filmography = filmography
+        )
+    }
 
 
     private fun Elements.toInfo() =
@@ -318,13 +535,6 @@ object FilmPalastProvider : Provider {
 
                 val released = textList.find { it.matches(Regex("\\d{4}")) }
 
-                val lastEpisode = textList.find { it.matches(Regex("S\\d+\\s*:E\\d+")) }?.let { s ->
-                    val result = Regex("S(\\d+)\\s*:E(\\d+)").find(s)?.groupValues
-                    object {
-                        val season = result?.getOrNull(1)?.toIntOrNull() ?: 0
-                        val episode = result?.getOrNull(2)?.toIntOrNull() ?: 0
-                    }
-                }
             }
         }
 
@@ -358,6 +568,9 @@ object FilmPalastProvider : Provider {
         @GET("movies/new/page/1")
         suspend fun getHome(): Document
 
+        @GET("serien/view/page/1")
+        suspend fun getTvShowsHome(): Document
+
         @GET
         suspend fun getMoviePage(@Url url: String): Document
 
@@ -381,6 +594,9 @@ object FilmPalastProvider : Provider {
 
         @GET("search/genre/{genre}/{page}")
         suspend fun getGenre(@Path("genre") genre: String, @Path("page") page: Int): Document
+
+        @GET
+        suspend fun getPeoplePage(@Url url: String): Document
 
     }
 

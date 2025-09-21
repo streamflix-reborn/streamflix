@@ -11,6 +11,7 @@ class BigWarpExtractor: Extractor() {
 
     override val name = "BigWarp (VLC only)"
     override val mainUrl = "https://bigwarp.cc/"
+    override val aliasUrls = listOf("https://bigwarp.io", "https://bigwarp.pro")
 
 
     override suspend fun extract(link: String): Video {

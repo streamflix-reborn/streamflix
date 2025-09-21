@@ -79,7 +79,6 @@ open class StreamWishExtractor : Extractor() {
         "https://wishonly.site",
         "https://playerwish.com",
         "https://katomen.store",
-        "https://hlswish.com",
         "https://streamwish.fun",
         "https://swishsrv.com",
         "https://iplayerhls.com",
@@ -92,7 +91,9 @@ open class StreamWishExtractor : Extractor() {
         "https://stbhg.click",
         "https://dhcplay.com",
         "https://gradehgplus.com",
-        "https://ultpreplayer.com"
+        "https://ultpreplayer.com",
+        "https://hglink.to",
+        "https://haxloppd.com",
     )
 
     protected var referer = ""

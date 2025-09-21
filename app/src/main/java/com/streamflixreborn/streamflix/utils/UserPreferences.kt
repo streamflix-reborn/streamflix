@@ -40,7 +40,7 @@ object UserPreferences {
 
 
     var currentProvider: Provider?
-        get() = providers.find { it.name == Key.CURRENT_PROVIDER.getString() }
+        get() = Provider.providers.keys.find { it.name == Key.CURRENT_PROVIDER.getString() }
         set(value) = Key.CURRENT_PROVIDER.setString(value?.name)
 
     var currentLanguage: String?

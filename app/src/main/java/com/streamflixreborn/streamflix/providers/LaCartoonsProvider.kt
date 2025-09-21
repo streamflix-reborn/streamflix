@@ -232,15 +232,24 @@ object LaCartoonsProvider : Provider {
         val doc = service.getPage(url)
         val iframe = doc.selectFirst("iframe[src]")?.attr("src").orEmpty()
         val finalUrl = if (iframe.startsWith("http")) iframe else "$iframe"
-        return if (finalUrl.isNotBlank()) {
-            listOf(
-                Video.Server(
-                    id = "OK.ru",
-                    name = "OK.ru",
-                    src = finalUrl
-                )
-            )
-        } else emptyList()
+        return listOfNotNull(
+            if (finalUrl.isNotBlank()) {
+                try {
+                    val serverName = finalUrl.toHttpUrl().host
+                        .replaceFirst("www.", "")
+                        .substringBefore(".")
+                        .replaceFirstChar { char -> if (char.isLowerCase()) char.titlecase() else char.toString() }
+                    
+                    Video.Server(
+                        id = finalUrl,
+                        name = serverName,
+                        src = finalUrl
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            } else null
+        )
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
