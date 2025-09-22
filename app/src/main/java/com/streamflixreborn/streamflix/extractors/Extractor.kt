@@ -69,6 +69,10 @@ abstract class Extractor {
             GoodstreamExtractor(),
             LamovieExtractor(),
             UqloadExtractor(),
+            MailRuExtractor(),
+            MixDropExtractor(),
+            SupervideoExtractor(),
+            DroploadExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {
