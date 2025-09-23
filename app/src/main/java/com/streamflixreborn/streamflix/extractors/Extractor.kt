@@ -73,6 +73,7 @@ abstract class Extractor {
             MixDropExtractor(),
             SupervideoExtractor(),
             DroploadExtractor(),
+            RpmvidExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {

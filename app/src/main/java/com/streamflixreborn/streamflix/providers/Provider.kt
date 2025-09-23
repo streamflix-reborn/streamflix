@@ -75,6 +75,7 @@ interface Provider {
             PelisplustoProvider to ProviderSupport(movies = true, tvShows = true),
             CableVisionHDProvider to ProviderSupport(movies = false, tvShows = true),
             StreamingItaProvider to ProviderSupport(movies = true, tvShows = true),
+            Altadefinizione01Provider to ProviderSupport(movies = true, tvShows = true),
         )
 
         // Helper functions to check support
