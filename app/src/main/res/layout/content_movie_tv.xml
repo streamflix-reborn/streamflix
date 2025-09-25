@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -31,9 +31,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_movie_poster"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_goneMarginStart="70dp"
-        tools:text="Title" />
+        tools:text="Movie Title" />
 
+    <!-- Movie rating, quality, released, runtime (same as TV layout) -->
     <ImageView
         android:id="@+id/iv_movie_rating_icon"
         android:layout_width="0dp"
@@ -45,7 +45,6 @@
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintStart_toEndOf="@id/iv_movie_poster"
         app:layout_constraintTop_toTopOf="@id/tv_movie_rating"
-        app:layout_goneMarginStart="70dp"
         tools:ignore="ContentDescription,UseAppTint" />
 
     <TextView
@@ -69,8 +68,7 @@
         app:layout_constraintBottom_toTopOf="@id/barrier1"
         app:layout_constraintStart_toEndOf="@id/tv_movie_rating"
         app:layout_constraintTop_toBottomOf="@id/tv_movie_title"
-        tools:text="HD"
-        tools:visibility="visible" />
+        tools:text="HD" />
 
     <TextView
         android:id="@+id/tv_movie_released"
@@ -81,8 +79,7 @@
         app:layout_constraintBottom_toTopOf="@id/barrier1"
         app:layout_constraintStart_toEndOf="@id/tv_movie_quality"
         app:layout_constraintTop_toBottomOf="@id/tv_movie_title"
-        tools:text="yyyy"
-        tools:visibility="visible" />
+        tools:text="yyyy" />
 
     <TextView
         android:id="@+id/tv_movie_runtime"
@@ -93,8 +90,7 @@
         app:layout_constraintBottom_toTopOf="@id/barrier1"
         app:layout_constraintStart_toEndOf="@id/tv_movie_released"
         app:layout_constraintTop_toBottomOf="@id/tv_movie_title"
-        tools:text="# h # min"
-        tools:visibility="visible" />
+        tools:text="# h # min" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrier1"
@@ -113,7 +109,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_movie_poster"
         app:layout_constraintTop_toBottomOf="@id/barrier1"
-        app:layout_goneMarginStart="70dp"
         tools:text="Genres" />
 
     <TextView
@@ -128,67 +123,80 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_movie_poster"
         app:layout_constraintTop_toBottomOf="@id/tv_movie_genres"
-        app:layout_goneMarginStart="70dp"
         tools:text="Overview" />
 
-    <TextView
-        android:id="@+id/btn_movie_watch_now"
-        style="@style/AppTheme.Widget.Tv.Button"
+    <!-- Nested ConstraintLayout for buttons -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_movie_buttons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="30dp"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:text="@string/movie_watch_now"
-        app:layout_constraintStart_toEndOf="@id/iv_movie_poster"
-        app:layout_constraintTop_toBottomOf="@id/tv_movie_overview"
-        app:layout_goneMarginStart="70dp" />
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="@id/tv_movie_overview"
+        app:layout_constraintTop_toBottomOf="@id/tv_movie_overview">
 
-    <ProgressBar
-        android:id="@+id/pb_movie_progress"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="4dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="16dp"
-        android:backgroundTint="#CC646464"
-        android:progressTint="#FFFFFF"
-        app:layout_constraintEnd_toEndOf="@id/btn_movie_watch_now"
-        app:layout_constraintStart_toStartOf="@id/btn_movie_watch_now"
-        app:layout_constraintTop_toBottomOf="@id/btn_movie_watch_now"
-        tools:progress="80" />
+        <TextView
+            android:id="@+id/btn_movie_watch_now"
+            style="@style/AppTheme.Widget.Tv.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/movie_watch_now"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/btn_movie_trailer"
-        style="@style/AppTheme.Widget.Tv.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="25dp"
-        android:layout_marginTop="30dp"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:text="@string/movie_trailer"
-        app:layout_constraintStart_toEndOf="@id/btn_movie_watch_now"
-        app:layout_constraintTop_toBottomOf="@id/tv_movie_overview" />
+        <TextView
+            android:id="@+id/btn_movie_trailer"
+            style="@style/AppTheme.Widget.Tv.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/movie_trailer"
+            app:layout_constraintStart_toEndOf="@id/btn_movie_watch_now"
+            app:layout_constraintTop_toTopOf="@id/btn_movie_watch_now"
+            android:layout_marginStart="16dp" />
 
-    <ImageView
-        android:id="@+id/btn_movie_favorite"
-        style="@style/AppTheme.Widget.Tv.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="30dp"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:src="@drawable/ic_favorite_disable"
-        android:tint="@drawable/color_button_text"
-        app:layout_constraintBottom_toBottomOf="@id/btn_movie_trailer"
-        app:layout_constraintStart_toEndOf="@id/btn_movie_trailer"
-        app:layout_constraintTop_toBottomOf="@id/tv_movie_overview"
-        tools:ignore="ContentDescription,UseAppTint" />
+        <ImageView
+            android:id="@+id/btn_movie_favorite"
+            style="@style/AppTheme.Widget.Tv.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:src="@drawable/ic_favorite_disable"
+            android:tint="@drawable/color_button_text"
+            app:layout_constraintStart_toEndOf="@id/btn_movie_trailer"
+            app:layout_constraintTop_toTopOf="@id/btn_movie_watch_now"
+            app:layout_constraintBottom_toBottomOf="@id/btn_movie_watch_now"
+            android:layout_marginStart="16dp"
+            app:layout_constraintDimensionRatio="1:1"
+            tools:ignore="ContentDescription,UseAppTint" />
+
+        <ProgressBar
+            android:id="@+id/pb_movie_progress"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp"
+            android:backgroundTint="#CC646464"
+            android:progressTint="#FFFFFF"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_movie_watch_now"
+            tools:progress="80" />
+
+        <ProgressBar
+            android:id="@+id/pb_movie_watch_now_loading"
+            style="@style/AppTheme.Widget.Tv.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@drawable/color_button_text"
+            android:indeterminateTintMode="src_atop"
+            android:minWidth="100dp"
+            app:layout_constraintStart_toStartOf="@id/btn_movie_watch_now"
+            app:layout_constraintTop_toTopOf="@id/btn_movie_watch_now"
+            android:visibility="gone"/>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
