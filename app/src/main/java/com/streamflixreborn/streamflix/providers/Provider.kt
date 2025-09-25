@@ -76,6 +76,7 @@ interface Provider {
             CableVisionHDProvider to ProviderSupport(movies = false, tvShows = true),
             StreamingItaProvider to ProviderSupport(movies = true, tvShows = true),
             Altadefinizione01Provider to ProviderSupport(movies = true, tvShows = true),
+            GuardaFlixProvider to ProviderSupport(movies = true, tvShows = false),
         )
 
         // Helper functions to check support

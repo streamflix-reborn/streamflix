@@ -20,7 +20,10 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.util.concurrent.TimeUnit
 import java.net.URLEncoder
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.Url
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 object Altadefinizione01Provider : Provider {
 
@@ -29,47 +32,84 @@ object Altadefinizione01Provider : Provider {
     override val logo: String get() = "$baseUrl/templates/Darktemplate_pagespeed/images/logo.png"
     override val language: String = "it"
 
-    private const val DEFAULT_USER_AGENT =
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+    private const val USER_AGENT = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-    private interface Service {
+    private interface Altadefinizione01Service {
+        companion object {
+            fun build(baseUrl: String): Altadefinizione01Service {
+                val clientBuilder = OkHttpClient.Builder()
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+
+                val doh = DnsOverHttps.Builder()
+                    .client(clientBuilder.build())
+                    .url("https://1.1.1.1/dns-query".toHttpUrl())
+                    .build()
+
+                val client = clientBuilder.dns(doh).build()
+
+                return Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .addConverterFactory(JsoupConverterFactory.create())
+                    .client(client)
+                    .build()
+                    .create(Altadefinizione01Service::class.java)
+            }
+        }
+
+        @Headers(USER_AGENT)
+        @GET(".")
+        suspend fun getHome(): Document
+
+        @Headers(USER_AGENT)
+        @GET("cinema/")
+        suspend fun getCinema(): Document
+
+        @Headers(USER_AGENT)
+        @GET("cinema/page/{page}/")
+        suspend fun getCinema(@Path("page") page: Int): Document
+
+        @Headers(USER_AGENT)
+        @GET("serie-tv/")
+        suspend fun getSerieTv(): Document
+
+        @Headers(USER_AGENT)
+        @GET("serie-tv/page/{page}/")
+        suspend fun getSerieTv(@Path("page") page: Int): Document
+
+        @Headers(USER_AGENT)
+        @GET("index.php")
+        suspend fun searchFirst(
+            @Query("do") doParam: String = "search",
+            @Query("subaction") subaction: String = "search",
+            @Query("titleonly") titleonly: Int = 3,
+            @Query(value = "story", encoded = true) story: String,
+            @Query("full_search") fullSearch: Int = 0,
+        ): Document
+
+        @Headers(USER_AGENT)
+        @GET("index.php")
+        suspend fun searchPaged(
+            @Query("do") doParam: String = "search",
+            @Query("subaction") subaction: String = "search",
+            @Query("titleonly") titleonly: Int = 3,
+            @Query("full_search") fullSearch: Int = 0,
+            @Query("search_start") searchStart: Int,
+            @Query("result_from") resultFrom: Int,
+            @Query(value = "story", encoded = true) story: String,
+        ): Document
+
+        @Headers(USER_AGENT)
         @GET
         suspend fun getPage(@Url url: String): Document
     }
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(baseUrl)
-        .addConverterFactory(JsoupConverterFactory.create())
-        .client(getOkHttpClient())
-        .build()
+    private val service = Altadefinizione01Service.build(baseUrl)
 
-    private val service = retrofit.create(Service::class.java)
-
-    private fun getOkHttpClient(): OkHttpClient {
-        val clientBuilder = OkHttpClient.Builder()
-            .readTimeout(30, TimeUnit.SECONDS)
-            .connectTimeout(30, TimeUnit.SECONDS)
-
-        val doh = DnsOverHttps.Builder()
-            .client(clientBuilder.build())
-            .url("https://1.1.1.1/dns-query".toHttpUrl())
-            .build()
-
-        clientBuilder
-            .dns(doh)
-            .addInterceptor { chain ->
-                val original = chain.request()
-                val req = original.newBuilder()
-                    .header("User-Agent", DEFAULT_USER_AGENT)
-                    .build()
-                chain.proceed(req)
-            }
-
-        return clientBuilder.build()
-    }
+    
 
     override suspend fun getHome(): List<Category> {
-        val doc = service.getPage(baseUrl)
+        val doc = service.getHome()
 
         val categories = mutableListOf<Category>()
 
@@ -136,10 +176,17 @@ object Altadefinizione01Provider : Provider {
         }
     }
 
+    private fun cleanEpisodeTitle(rawTitle: String): String? {
+        val cleaned = rawTitle
+            .replace(Regex("^Episodio\\s*\\d+\\s*:\\s*", RegexOption.IGNORE_CASE), "")
+            .trim()
+        return cleaned.ifBlank { null }
+    }
+
     override suspend fun search(query: String, page: Int): List<AppAdapter.Item> {
         if (query.isBlank()) {
             if (page > 1) return emptyList()
-            val home = service.getPage(baseUrl)
+            val home = service.getHome()
             val genreLinks = home
                 .select(".widget-title:matches(^Categorie in Altadefinizione$)")
                 .firstOrNull()?.parent()
@@ -157,18 +204,14 @@ object Altadefinizione01Provider : Provider {
         }
 
         val encoded = URLEncoder.encode(query, "UTF-8")
-
-        val baseSearchUrl = "$baseUrl/?do=search&subaction=search&titleonly=3&story=$encoded"
-
-        val firstDoc = service.getPage(baseSearchUrl)
+        val firstDoc = service.searchFirst(story = encoded)
         val hasPager = firstDoc.selectFirst("div.page_nav") != null
         if (page > 1 && !hasPager) return emptyList()
 
-        val doc: Document = if (page <= 1) firstDoc else run {
+        val doc: Document = if (page <= 1) firstDoc else {
             val searchStart = page
             val resultFrom = (page - 1) * 50 + 1
-            val url = "$baseUrl/index.php?do=search&subaction=search&full_search=0&search_start=$searchStart&result_from=$resultFrom&story=$encoded"
-            service.getPage(url)
+            service.searchPaged(searchStart = searchStart, resultFrom = resultFrom, story = encoded)
         }
 
         return doc.select("#dle-content .boxgrid.caption")
@@ -176,20 +219,14 @@ object Altadefinizione01Provider : Provider {
     }
 
     override suspend fun getMovies(page: Int): List<Movie> {
-        val base = "$baseUrl/cinema"
-        val url = if (page > 1) "$base/page/$page/" else "$base/"
-
-        val doc = service.getPage(url)
+        val doc = if (page > 1) service.getCinema(page) else service.getCinema()
 
         return doc.select("#dle-content .boxgrid.caption")
             .mapNotNull { el -> parseGridItem(el) as? Movie }
     }
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
-        val base = "$baseUrl/serie-tv"
-        val url = if (page > 1) "$base/page/$page/" else "$base/"
-
-        val doc = service.getPage(url)
+        val doc = if (page > 1) service.getSerieTv(page) else service.getSerieTv()
 
         return doc.select("#dle-content .boxgrid.caption")
             .mapNotNull { el -> parseGridItem(el) as? TvShow }
@@ -200,14 +237,28 @@ object Altadefinizione01Provider : Provider {
         val title = doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim()
             ?: doc.selectFirst("h1,h2,title")?.text()?.trim()
             ?: ""
-        val posterRaw = doc.selectFirst("img.wp-post-image")?.attr("data-src") ?: ""
+        val dataSrc = doc.selectFirst(".fix img")?.attr("data-src") ?: ""
+        val posterRaw = if (dataSrc.isNotBlank() && !dataSrc.contains("Ошибка")) {
+            dataSrc
+        } else {
+            doc.selectFirst("#single .sbox .imagen meta[itemprop=image]")?.attr("content")
+                ?: doc.selectFirst("meta[itemprop=image]")?.attr("content")
+                ?: ""
+        }
         val poster = normalizeUrl(posterRaw)
         val rating = doc.selectFirst("div.imdb_r [itemprop=ratingValue]")?.text()?.trim()?.toDoubleOrNull()
         val overview = doc.selectFirst(".sbox .entry-content p")
             ?.ownText()
             ?.trim()
+            ?.replace(Regex("Fonte:.*$"), "")
+            ?.trim()
+        val trailer = doc.selectFirst(".btn_trailer a[href]")?.attr("href")
+            ?.trim()
+            ?.takeIf { it.contains("youtube", true) }
         val genres = doc.select("p.meta_dd b[title=Genere]")
-            .firstOrNull()?.parent()?.select("a")?.map { a ->
+            .firstOrNull()?.parent()?.select("a")
+            ?.filterNot { a -> a.text().trim().equals("Prossimamente", ignoreCase = true) }
+            ?.map { a ->
                 Genre(
                     id = a.attr("href"),
                     name = a.text().trim()
@@ -225,6 +276,7 @@ object Altadefinizione01Provider : Provider {
             title = title,
             poster = poster,
             banner = null,
+            trailer = trailer,
             rating = rating,
             overview = overview,
             genres = genres,
@@ -237,11 +289,20 @@ object Altadefinizione01Provider : Provider {
         val title = doc.selectFirst("meta[property=og:title]")?.attr("content")?.trim()
             ?: doc.selectFirst("h1,h2,title")?.text()?.trim()
             ?: ""
-        val posterRaw = doc.selectFirst("img.wp-post-image")?.attr("data-src") ?: ""
+        val dataSrc = doc.selectFirst(".fix img")?.attr("data-src") ?: ""
+        val posterRaw = if (dataSrc.isNotBlank() && !dataSrc.contains("Ошибка")) {
+            dataSrc
+        } else {
+            doc.selectFirst("#single .sbox .imagen meta[itemprop=image]")?.attr("content")
+                ?: doc.selectFirst("meta[itemprop=image]")?.attr("content")
+                ?: ""
+        }
         val poster = normalizeUrl(posterRaw)
         val rating = doc.selectFirst("div.imdb_r [itemprop=ratingValue]")?.text()?.trim()?.toDoubleOrNull()
         val overview = doc.selectFirst(".sbox .entry-content p")
             ?.ownText()
+            ?.trim()
+            ?.replace(Regex("Fonte:.*$"), "")
             ?.trim()
         val genres = doc.select("p.meta_dd b[title=Genere]")
             .firstOrNull()?.parent()?.select("a")?.map { a ->
@@ -267,7 +328,7 @@ object Altadefinizione01Provider : Provider {
             seasonPane?.select("ul > li > a[allowfullscreen][data-link]")?.forEach { ep ->
                 val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                     ?: ep.text().trim().toIntOrNull() ?: 0
-                val epTitle = ep.attr("data-title").ifBlank { null }
+                val epTitle = cleanEpisodeTitle(ep.attr("data-title"))
                 val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
                 val server = mirrors.firstOrNull { m ->
                     val name = m.text().trim()
@@ -316,7 +377,7 @@ object Altadefinizione01Provider : Provider {
         seasonPane.select("ul > li > a[allowfullscreen][data-link]").forEach { ep ->
             val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                 ?: ep.text().trim().toIntOrNull() ?: 0
-            val epTitle = ep.attr("data-title").ifBlank { null }
+            val epTitle = cleanEpisodeTitle(ep.attr("data-title"))
             val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
             val server = mirrors.firstOrNull { m ->
                 val name = m.text().trim()
@@ -428,5 +489,3 @@ object Altadefinizione01Provider : Provider {
         return Extractor.extract(server.src)
     }
 }
-
-
