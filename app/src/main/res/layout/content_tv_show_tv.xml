@@ -5,124 +5,96 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- Poster -->
     <ImageView
         android:id="@+id/iv_tv_show_poster"
-        android:layout_width="0dp"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="100dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="100dp"
+        android:layout_marginStart="70dp"
+        android:layout_marginTop="50dp"
         android:adjustViewBounds="true"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription"
         tools:layout_constraintDimensionRatio="2:3"
-        tools:layout_height="0dp" />
+        tools:layout_height="0dp"
+        tools:visibility="visible" />
 
-    <!-- Favorite button -->
-    <ImageView
-        android:id="@+id/btn_tv_show_favorite"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="12dp"
-        android:padding="10dp"
-        android:src="@drawable/ic_favorite_disable"
-        android:tint="@drawable/color_button_text"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="ContentDescription,UseAppTint" />
-
-    <!-- Title -->
     <TextView
         android:id="@+id/tv_tv_show_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="10dp"
-        android:gravity="center"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="70dp"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:textSize="50sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_tv_show_poster"
-        app:layout_goneMarginTop="64dp"
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginStart="70dp"
         tools:text="Title" />
 
-    <!-- Rating icon -->
     <ImageView
         android:id="@+id/iv_tv_show_rating_icon"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="10dp"
+        android:layout_marginStart="40dp"
         android:src="@drawable/ic_star"
         android:tint="#C0C0C0"
         app:layout_constraintBottom_toBottomOf="@id/tv_tv_show_rating"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/tv_tv_show_rating"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
         app:layout_constraintTop_toTopOf="@id/tv_tv_show_rating"
+        app:layout_goneMarginStart="70dp"
         tools:ignore="ContentDescription,UseAppTint" />
 
-    <!-- Rating -->
     <TextView
         android:id="@+id/tv_tv_show_rating"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="15dp"
         app:layout_constraintBottom_toTopOf="@id/barrier1"
-        app:layout_constraintEnd_toStartOf="@id/tv_tv_show_quality"
         app:layout_constraintStart_toEndOf="@id/iv_tv_show_rating_icon"
         app:layout_constraintTop_toBottomOf="@id/tv_tv_show_title"
         tools:text="#.#" />
 
-    <!-- Quality -->
     <TextView
         android:id="@+id/tv_tv_show_quality"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="15dp"
         android:textAllCaps="true"
         android:textColor="#FFFFFF"
-        android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@id/barrier1"
-        app:layout_constraintEnd_toStartOf="@id/tv_tv_show_released"
         app:layout_constraintStart_toEndOf="@id/tv_tv_show_rating"
         app:layout_constraintTop_toBottomOf="@id/tv_tv_show_title"
-        tools:text="HD" />
+        tools:text="HD"
+        tools:visibility="visible" />
 
-    <!-- Released -->
     <TextView
         android:id="@+id/tv_tv_show_released"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="15dp"
         app:layout_constraintBottom_toTopOf="@id/barrier1"
-        app:layout_constraintEnd_toStartOf="@id/tv_tv_show_runtime"
         app:layout_constraintStart_toEndOf="@id/tv_tv_show_quality"
         app:layout_constraintTop_toBottomOf="@id/tv_tv_show_title"
-        tools:text="yyyy" />
+        tools:text="yyyy"
+        tools:visibility="visible" />
 
-    <!-- Runtime -->
     <TextView
         android:id="@+id/tv_tv_show_runtime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="15dp"
         app:layout_constraintBottom_toTopOf="@id/barrier1"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tv_tv_show_released"
         app:layout_constraintTop_toBottomOf="@id/tv_tv_show_title"
-        tools:text="# h # min" />
+        tools:text="# h # min"
+        tools:visibility="visible" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrier1"
@@ -131,43 +103,72 @@
         app:barrierDirection="bottom"
         app:constraint_referenced_ids="tv_tv_show_rating,tv_tv_show_quality,tv_tv_show_released,tv_tv_show_runtime" />
 
-    <!-- Genres -->
     <TextView
         android:id="@+id/tv_tv_show_genres"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="10dp"
-        android:gravity="center"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="70dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
         app:layout_constraintTop_toBottomOf="@id/barrier1"
+        app:layout_goneMarginStart="70dp"
         tools:text="Genres" />
 
-    <!-- Watch Episode Button -->
+    <TextView
+        android:id="@+id/tv_tv_show_overview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="70dp"
+        android:ellipsize="end"
+        android:maxLines="10"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
+        app:layout_constraintTop_toBottomOf="@id/tv_tv_show_genres"
+        app:layout_goneMarginStart="70dp"
+        tools:text="Overview" />
+
     <TextView
         android:id="@+id/btn_tv_show_watch_episode"
         style="@style/AppTheme.Widget.Tv.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="26dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="30dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:text="@string/tv_show_watch_season_episode"
-        app:layout_constraintEnd_toStartOf="@id/btn_tv_show_trailer"
-        app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_tv_show_genres" />
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
+        app:layout_constraintTop_toBottomOf="@id/tv_tv_show_overview"
+        app:layout_goneMarginStart="70dp" />
 
-    <!-- ProgressBar below watch button -->
+    <ProgressBar
+        android:id="@+id/pb_tv_show_watch_episode_loading"
+        style="@style/AppTheme.Widget.Tv.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="30dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@drawable/color_button_text"
+        android:indeterminateTintMode="src_atop"
+        android:minWidth="100dp"
+        app:layout_constraintBottom_toBottomOf="@id/btn_tv_show_favorite"
+        app:layout_constraintStart_toEndOf="@id/iv_tv_show_poster"
+        app:layout_constraintTop_toBottomOf="@id/tv_tv_show_overview"
+        app:layout_goneMarginStart="70dp" />
+
     <ProgressBar
         android:id="@+id/pb_tv_show_progress_episode"
         style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="0dp"
         android:layout_height="4dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="16dp"
         android:backgroundTint="#CC646464"
         android:progressTint="#FFFFFF"
         app:layout_constraintEnd_toEndOf="@id/btn_tv_show_watch_episode"
@@ -175,38 +176,52 @@
         app:layout_constraintTop_toBottomOf="@id/btn_tv_show_watch_episode"
         tools:progress="80" />
 
-    <!-- Trailer button -->
-    <TextView
-        android:id="@+id/btn_tv_show_trailer"
-        style="@style/AppTheme.Widget.Tv.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="10dp"
-        android:text="@string/tv_show_trailer"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btn_tv_show_watch_episode"
-        app:layout_constraintTop_toBottomOf="@id/tv_tv_show_genres" />
-
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrier2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:barrierDirection="bottom"
-        app:constraint_referenced_ids="btn_tv_show_watch_episode,pb_tv_show_progress_episode,btn_tv_show_trailer" />
+        app:barrierDirection="end"
+        app:constraint_referenced_ids="btn_tv_show_watch_episode,pb_tv_show_watch_episode_loading" />
 
-    <!-- Overview -->
     <TextView
-        android:id="@+id/tv_tv_show_overview"
-        android:layout_width="0dp"
+        android:id="@+id/btn_tv_show_trailer"
+        style="@style/AppTheme.Widget.Tv.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="25dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:text="@string/tv_show_trailer"
+        app:layout_constraintStart_toEndOf="@id/barrier2"
+        app:layout_constraintTop_toTopOf="@id/btn_tv_show_watch_episode"
+        app:layout_constraintBottom_toBottomOf="@id/btn_tv_show_watch_episode" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/buttons_barrier"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="10dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/barrier2"
-        tools:text="Overview" />
+        app:barrierDirection="end"
+        app:barrierAllowsGoneWidgets="true"
+        app:constraint_referenced_ids="barrier2,btn_tv_show_trailer" />
+
+    <ImageView
+        android:id="@+id/btn_tv_show_favorite"
+        style="@style/AppTheme.Widget.Tv.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="20dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_favorite_disable"
+        android:tint="@drawable/color_button_text"
+        app:layout_constraintTop_toTopOf="@id/btn_tv_show_watch_episode"
+        app:layout_constraintBottom_toBottomOf="@id/btn_tv_show_watch_episode"
+        app:layout_constraintStart_toEndOf="@id/buttons_barrier"
+        tools:ignore="ContentDescription,UseAppTint" />
+
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
