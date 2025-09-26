@@ -245,24 +245,46 @@ object FlixLatamProvider : Provider {
         val responseJson = service.getPlayerAjax(formBody).string()
         val embedUrl = json.decodeFromString<PlayerResponse>(responseJson).embed_url.replace("\\", "")
 
-        if (!embedUrl.contains("embed")) return emptyList()
-
         val embedHeaders = mapOf("Referer" to baseUrl)
         val embedDocument = service.getEmbedPage(embedUrl, embedHeaders)
 
         val scriptData = embedDocument.selectFirst("script:containsData(const dataLink =)")?.data() ?: ""
-        val dataLinkJsonString = Regex("""const dataLink\s*=\s*(\[.*?\]);""").find(scriptData)?.groupValues?.get(1) ?: return emptyList()
+        val dataLinkJsonString = Regex("""const dataLink\s*=\s*(\[.*?\]);""").find(scriptData)?.groupValues?.get(1)
 
-        return json.decodeFromString<List<DataLinkItem>>(dataLinkJsonString).flatMap { item ->
-            item.sortedEmbeds.mapNotNull { embed ->
-                CryptoAES.decrypt(embed.link, "Ak7qrvvH4WKYxV2OgaeHAEg2a5eh16vE")?.let { decryptedLink ->
-                    Video.Server(
-                        id = decryptedLink,
-                        name = "${embed.servername.replaceFirstChar { it.titlecase(Locale.ROOT) }} [${item.video_language}]"
-                    )
+        if (dataLinkJsonString != null) {
+            return json.decodeFromString<List<DataLinkItem>>(dataLinkJsonString).flatMap { item ->
+                item.sortedEmbeds.mapNotNull { embed ->
+                    if (embed.servername.equals("download", ignoreCase = true)) return@mapNotNull null
+                    CryptoAES.decrypt(embed.link, "Ak7qrvvH4WKYxV2OgaeHAEg2a5eh16vE")?.let { decryptedLink ->
+                        Video.Server(
+                            id = decryptedLink,
+                            name = "${embed.servername.replaceFirstChar { it.titlecase(Locale.ROOT) }} [${item.video_language}]"
+                        )
+                    }
                 }
-            }
-        }.distinctBy { it.id }
+            }.distinctBy { it.id }
+        }
+
+        // DOM-based fallback: replicate SoloLatino approach for embeds without dataLink
+        val domItems = embedDocument.select(".ODDIV .OD_1 li[onclick]")
+        val domServers = mutableListOf<Video.Server>()
+        for (dom in domItems) {
+            val onclick = dom.attr("onclick")
+            val m = Regex("""go_to_playerVast\(\s*'([^']+)'""").find(onclick)
+            val finalUrl = m?.groupValues?.getOrNull(1)?.trim().orEmpty()
+            if (finalUrl.isBlank()) continue
+            val serverName = dom.selectFirst("span")?.text()?.trim().orEmpty()
+            if (serverName.contains("1fichier", ignoreCase = true)) continue
+            domServers.add(
+                Video.Server(
+                    id = finalUrl,
+                    name = serverName
+                )
+            )
+        }
+        if (domServers.isNotEmpty()) return domServers.distinctBy { it.id }
+
+        return emptyList()
     }
 
 

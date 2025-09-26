@@ -106,7 +106,7 @@ object SoloLatinoProvider : Provider {
         for ((categoryName, deferred) in deferredMap) {
             try {
                 val doc = deferred.await()
-                val shows = if (categoryName.contains("Películas")) parseMovies(doc) else parseTvShows(doc)
+                val shows = parseMixed(doc)
                 if (shows.isNotEmpty()) {
                     categories.add(Category(categoryName, shows.take(12)))
                 }
@@ -116,18 +116,51 @@ object SoloLatinoProvider : Provider {
         categories
     }
 
+    private fun parseMixed(document: Document): List<Show> {
+        return document.select("article.item").mapNotNull { element ->
+            val linkElement = element.selectFirst("a") ?: return@mapNotNull null
+            val href = linkElement.attr("href")
+            val absoluteUrl = if (href.startsWith("http")) href else "$baseUrl$href"
+            val imgUrl = element.selectFirst("img")?.attr("data-srcset") ?: ""
+            val title = element.selectFirst("img")?.attr("alt") ?: ""
+
+            if (element.hasClass("movies")) {
+                Movie(
+                    id = absoluteUrl,
+                    title = title,
+                    poster = if (imgUrl.startsWith("http")) imgUrl else "$baseUrl$imgUrl"
+                )
+            } else {
+                TvShow(
+                    id = absoluteUrl,
+                    title = title,
+                    poster = if (imgUrl.startsWith("http")) imgUrl else "$baseUrl$imgUrl"
+                )
+            }
+        }
+    }
+
     private fun parseBannerShows(document: Document): List<Show> {
         return document.select("article.item").mapNotNull { element ->
             val linkElement = element.selectFirst("a") ?: return@mapNotNull null
             val href = linkElement.attr("href")
             val absoluteUrl = if (href.startsWith("http")) href else "$baseUrl$href"
             val imageUrl = element.selectFirst("img")?.attr("data-srcset") ?: ""
+            val title = element.selectFirst("img")?.attr("alt") ?: ""
 
-            TvShow(
-                id = absoluteUrl,
-                title = element.selectFirst("img")!!.attr("alt"),
-                banner = if (imageUrl.startsWith("http")) imageUrl else "$baseUrl$imageUrl"
-            )
+            if (element.hasClass("movies")) {
+                Movie(
+                    id = absoluteUrl,
+                    title = title,
+                    banner = if (imageUrl.startsWith("http")) imageUrl else "$baseUrl$imageUrl"
+                )
+            } else {
+                TvShow(
+                    id = absoluteUrl,
+                    title = title,
+                    banner = if (imageUrl.startsWith("http")) imageUrl else "$baseUrl$imageUrl"
+                )
+            }
         }
     }
 
@@ -195,7 +228,28 @@ object SoloLatinoProvider : Provider {
 
         return try {
             val document = service.getPage("$baseUrl/page/$page?s=$query")
-            parseTvShows(document) // Usamos TvShow como genérico para búsqueda
+            val items = document.select("article.item").mapNotNull { element ->
+                val linkElement = element.selectFirst("a") ?: return@mapNotNull null
+                val href = linkElement.attr("href")
+                val absoluteUrl = if (href.startsWith("http")) href else "$baseUrl$href"
+                val imgUrl = element.selectFirst("img")?.attr("data-srcset") ?: ""
+                val title = element.selectFirst("img")?.attr("alt") ?: ""
+
+                if (element.hasClass("movies")) {
+                    Movie(
+                        id = absoluteUrl,
+                        title = title,
+                        poster = if (imgUrl.startsWith("http")) imgUrl else "$baseUrl$imgUrl"
+                    )
+                } else {
+                    TvShow(
+                        id = absoluteUrl,
+                        title = title,
+                        poster = if (imgUrl.startsWith("http")) imgUrl else "$baseUrl$imgUrl"
+                    )
+                }
+            }
+            items
         } catch (e: Exception) {
             emptyList()
         }
@@ -222,7 +276,7 @@ object SoloLatinoProvider : Provider {
     override suspend fun getGenre(id: String, page: Int): Genre {
         return try {
             val document = service.getPage("$baseUrl/page/$page?s=$id")
-            val shows = parseTvShows(document)
+            val shows = parseMixed(document)
             Genre(
                 id = id,
                 name = id.replaceFirstChar { it.uppercase() },
@@ -367,7 +421,8 @@ object SoloLatinoProvider : Provider {
             seasonElement.select("ul.episodios li").map { episodeElement ->
                 val numerando = episodeElement.selectFirst("div.numerando")?.text() ?: "0 - 0"
                 val episodeNum = numerando.split("-").getOrNull(1)?.trim()?.toIntOrNull() ?: 0
-                val episodeTitle = episodeElement.selectFirst("div.epst > h3.title")?.text() ?: "Episodio $episodeNum"
+                val episodeTitle = episodeElement.selectFirst("div.episodiotitle .epst")?.text()
+                    ?: "Episodio $episodeNum"
                 Episode(
                     id = episodeElement.selectFirst("a")!!.attr("href"),
                     number = episodeNum,
@@ -419,10 +474,25 @@ object SoloLatinoProvider : Provider {
                             "SUB" -> "[SUB]"
                             else -> ""
                         }
-                        for (embed in item.sortedEmbeds) {
-                            val decryptedLink = decryptAES(embed.link) ?: continue
+                        val embeds = item.sortedEmbeds
+                        for (embed in embeds) {
+                            if (embed.servername.equals("download", ignoreCase = true)) continue
+                            val encrypted = embed.link
+                            val decryptedLink = decryptAES(encrypted) ?: continue
                             servers.add(Video.Server(id = decryptedLink, name = "${embed.servername} $lang".trim()))
                         }
+                    }
+                } else {
+                    // DOM-based fallback: some players expose direct links via onclick handlers
+                    val iframeDocParsed = org.jsoup.Jsoup.parse(iframeHtml)
+                    val domItems = iframeDocParsed.select(".ODDIV .OD_1 li[onclick]")
+                    for (dom in domItems) {
+                        val onclick = dom.attr("onclick")
+                        val m = Regex("""go_to_playerVast\(\s*'([^']+)'""").find(onclick)
+                        val finalUrl = m?.groupValues?.getOrNull(1)?.trim().orEmpty()
+                        if (finalUrl.isBlank()) continue
+                        val serverName = dom.selectFirst("span")?.text()?.trim().orEmpty()
+                        servers.add(Video.Server(id = finalUrl, name = serverName))
                     }
                 }
             }
@@ -455,7 +525,7 @@ object SoloLatinoProvider : Provider {
             val document = service.getPage(id)
             val name = document.selectFirst(".data h1")?.text() ?: ""
             val poster = document.selectFirst(".poster img")?.attr("src")
-            val filmography = parseTvShows(document) // La estructura de la lista es la misma
+            val filmography = parseMixed(document)
             People(
                 id = id,
                 name = name,
