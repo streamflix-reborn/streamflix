@@ -7,7 +7,8 @@ import com.streamflixreborn.streamflix.extractors.Extractor
 import com.streamflixreborn.streamflix.models.*
 import com.streamflixreborn.streamflix.models.flixlatam.DataLinkItem
 import com.streamflixreborn.streamflix.models.flixlatam.PlayerResponse
-import com.streamflixreborn.streamflix.utils.CryptoAES
+// import com.streamflixreborn.streamflix.utils.CryptoAES
+import android.util.Base64
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.Json
 import okhttp3.*
@@ -248,14 +249,14 @@ object FlixLatamProvider : Provider {
         val embedHeaders = mapOf("Referer" to baseUrl)
         val embedDocument = service.getEmbedPage(embedUrl, embedHeaders)
 
-        val scriptData = embedDocument.selectFirst("script:containsData(const dataLink =)")?.data() ?: ""
-        val dataLinkJsonString = Regex("""const dataLink\s*=\s*(\[.*?\]);""").find(scriptData)?.groupValues?.get(1)
+        val scriptData = embedDocument.selectFirst("script:containsData(dataLink)")?.data() ?: ""
+        val dataLinkJsonString = Regex("""dataLink = (\[.+?\]);""").find(scriptData)?.groupValues?.get(1)
 
         if (dataLinkJsonString != null) {
             return json.decodeFromString<List<DataLinkItem>>(dataLinkJsonString).flatMap { item ->
                 item.sortedEmbeds.mapNotNull { embed ->
                     if (embed.servername.equals("download", ignoreCase = true)) return@mapNotNull null
-                    CryptoAES.decrypt(embed.link, "Ak7qrvvH4WKYxV2OgaeHAEg2a5eh16vE")?.let { decryptedLink ->
+                    decodeBase64Link(embed.link)?.let { decryptedLink ->
                         Video.Server(
                             id = decryptedLink,
                             name = "${embed.servername.replaceFirstChar { it.titlecase(Locale.ROOT) }} [${item.video_language}]"
@@ -376,5 +377,35 @@ object FlixLatamProvider : Provider {
 
         @GET
         suspend fun getEmbedPage(@Url url: String, @HeaderMap headers: Map<String, String>): Document
+    }
+
+    private fun decodeBase64Link(encryptedLink: String): String? {
+        return try {
+            // Encrypted link has format: header.payload.signature
+            val parts = encryptedLink.split(".")
+            if (parts.size != 3) return null
+            
+            // Decode the payload (middle part) from base64
+            var payloadB64 = parts[1]
+            
+            // Add padding if necessary
+            val missingPadding = payloadB64.length % 4
+            if (missingPadding != 0) {
+                payloadB64 += "=".repeat(4 - missingPadding)
+            }
+            
+            // Decode base64 payload
+            val payloadJson = String(android.util.Base64.decode(payloadB64, android.util.Base64.DEFAULT))
+            
+            // Manual parsing for robustness
+            val linkStart = payloadJson.indexOf("\"link\":\"")
+            if (linkStart == -1) return null
+            val valueStart = linkStart + 8
+            val valueEnd = payloadJson.indexOf("\"", valueStart)
+            if (valueEnd == -1) return null
+            payloadJson.substring(valueStart, valueEnd)
+        } catch (e: Exception) {
+            null
+        }
     }
 }

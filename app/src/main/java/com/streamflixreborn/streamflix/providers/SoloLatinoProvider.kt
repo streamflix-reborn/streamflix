@@ -27,9 +27,9 @@ import retrofit2.http.POST
 import retrofit2.http.Url
 import java.io.File
 import java.util.concurrent.TimeUnit
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
+// import javax.crypto.Cipher
+// import javax.crypto.spec.IvParameterSpec
+// import javax.crypto.spec.SecretKeySpec
 
 object SoloLatinoProvider : Provider {
 
@@ -443,57 +443,66 @@ object SoloLatinoProvider : Provider {
             val servers = mutableListOf<Video.Server>()
             val linkElements = doc.select("li[data-type][data-post][data-nume]")
 
+            // Try all elements, skip those that cause errors
             for (element in linkElements) {
-                val post = element.attr("data-post")
-                val nume = element.attr("data-nume")
-                val type = element.attr("data-type")
+                try {
+                    val post = element.attr("data-post")
+                    val nume = element.attr("data-nume")
+                    val type = element.attr("data-type")
 
-                val formBody = FormBody.Builder()
-                    .add("action", "doo_player_ajax")
-                    .add("post", post)
-                    .add("nume", nume)
-                    .add("type", type)
-                    .build()
+                    val formBody = FormBody.Builder()
+                        .add("action", "doo_player_ajax")
+                        .add("post", post)
+                        .add("nume", nume)
+                        .add("type", type)
+                        .build()
 
-                val ajaxResponse = service.getPlayerAjax(id, formBody)
-                val ajaxBody = ajaxResponse.body()?.string() ?: continue
+                    val ajaxResponse = service.getPlayerAjax(id, formBody)
+                    val ajaxBody = ajaxResponse.body()?.string() ?: continue
 
-                val iframeUrl = ajaxBody.substringAfter("src='").substringBefore("'")
-                if (iframeUrl.isBlank()) continue
+                    val iframeUrl = ajaxBody.substringAfter("src='").substringBefore("'")
+                    if (iframeUrl.isBlank()) continue
 
-                val iframeDoc = service.getPage(iframeUrl)
-                val iframeHtml = iframeDoc.html()
+                    val iframeDoc = service.getPage(iframeUrl)
+                    val iframeHtml = iframeDoc.html()
 
-                val dataLinkMatch = Regex("""dataLink = (\[.+?\]);""").find(iframeHtml)
-                if (dataLinkMatch != null) {
-                    val items = json.decodeFromString<List<Item>>(dataLinkMatch.groupValues[1])
-                    for (item in items) {
-                        val lang = when(item.video_language) {
-                            "LAT" -> "[LAT]"
-                            "ESP" -> "[CAST]"
-                            "SUB" -> "[SUB]"
-                            else -> ""
+                    val dataLinkMatch = Regex("""dataLink = (\[.+?\]);""").find(iframeHtml)
+                    if (dataLinkMatch != null) {
+                        val items = json.decodeFromString<List<Item>>(dataLinkMatch.groupValues[1])
+                        for (item in items) {
+                            val lang = when(item.video_language) {
+                                "LAT" -> "[LAT]"
+                                "ESP" -> "[CAST]"
+                                "SUB" -> "[SUB]"
+                                else -> ""
+                            }
+                            val embeds = item.sortedEmbeds
+                            for (embed in embeds) {
+                                if (embed.servername.equals("download", ignoreCase = true)) continue
+                                val encrypted = embed.link
+                                val decryptedLink = decodeBase64Link(encrypted) ?: continue
+                                servers.add(Video.Server(id = decryptedLink, name = "${embed.servername} $lang".trim()))
+                            }
                         }
-                        val embeds = item.sortedEmbeds
-                        for (embed in embeds) {
-                            if (embed.servername.equals("download", ignoreCase = true)) continue
-                            val encrypted = embed.link
-                            val decryptedLink = decryptAES(encrypted) ?: continue
-                            servers.add(Video.Server(id = decryptedLink, name = "${embed.servername} $lang".trim()))
+                        // Continue trying other elements to find more servers
+                    } else {
+                        // DOM-based fallback: some players expose direct links via onclick handlers
+                        val iframeDocParsed = org.jsoup.Jsoup.parse(iframeHtml)
+                        val domItems = iframeDocParsed.select(".ODDIV .OD_1 li[onclick]")
+                        for (dom in domItems) {
+                            val onclick = dom.attr("onclick")
+                            val m = Regex("""go_to_playerVast\(\s*'([^']+)'""").find(onclick)
+                            val finalUrl = m?.groupValues?.getOrNull(1)?.trim().orEmpty()
+                            if (finalUrl.isBlank()) continue
+                            val serverName = dom.selectFirst("span")?.text()?.trim().orEmpty()
+                            if (serverName.equals("1fichier", ignoreCase = true)) continue
+                            servers.add(Video.Server(id = finalUrl, name = serverName))
                         }
+                        // Continue trying other elements to find more servers
                     }
-                } else {
-                    // DOM-based fallback: some players expose direct links via onclick handlers
-                    val iframeDocParsed = org.jsoup.Jsoup.parse(iframeHtml)
-                    val domItems = iframeDocParsed.select(".ODDIV .OD_1 li[onclick]")
-                    for (dom in domItems) {
-                        val onclick = dom.attr("onclick")
-                        val m = Regex("""go_to_playerVast\(\s*'([^']+)'""").find(onclick)
-                        val finalUrl = m?.groupValues?.getOrNull(1)?.trim().orEmpty()
-                        if (finalUrl.isBlank()) continue
-                        val serverName = dom.selectFirst("span")?.text()?.trim().orEmpty()
-                        servers.add(Video.Server(id = finalUrl, name = serverName))
-                    }
+                } catch (e: Exception) {
+                    // Skip this element and continue with the next one
+                    continue
                 }
             }
             servers.distinctBy { it.id }
@@ -502,15 +511,45 @@ object SoloLatinoProvider : Provider {
         }
     }
 
-    private fun decryptAES(encrypted: String): String? {
+    // private fun decryptAES(encrypted: String): String? {
+    //     return try {
+    //         val key = "Ak7qrvvH4WKYxV2OgaeHAEg2a5eh16vE".toByteArray()
+    //         val decoded = Base64.decode(encrypted, Base64.DEFAULT)
+    //         val iv = decoded.copyOfRange(0, 16)
+    //         val cipherText = decoded.copyOfRange(16, decoded.size)
+    //         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+    //         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
+    //         String(cipher.doFinal(cipherText))
+    //     } catch (e: Exception) {
+    //         null
+    //     }
+    // }
+
+    private fun decodeBase64Link(encryptedLink: String): String? {
         return try {
-            val key = "Ak7qrvvH4WKYxV2OgaeHAEg2a5eh16vE".toByteArray()
-            val decoded = Base64.decode(encrypted, Base64.DEFAULT)
-            val iv = decoded.copyOfRange(0, 16)
-            val cipherText = decoded.copyOfRange(16, decoded.size)
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), IvParameterSpec(iv))
-            String(cipher.doFinal(cipherText))
+            // Encrypted link has format: header.payload.signature
+            val parts = encryptedLink.split(".")
+            if (parts.size != 3) return null
+            
+            // Decode the payload (middle part) from base64
+            var payloadB64 = parts[1]
+            
+            // Add padding if necessary
+            val missingPadding = payloadB64.length % 4
+            if (missingPadding != 0) {
+                payloadB64 += "=".repeat(4 - missingPadding)
+            }
+            
+            // Decode base64 payload
+            val payloadJson = String(Base64.decode(payloadB64, Base64.DEFAULT))
+            
+            // Manual parsing for robustness
+            val linkStart = payloadJson.indexOf("\"link\":\"")
+            if (linkStart == -1) return null
+            val valueStart = linkStart + 8
+            val valueEnd = payloadJson.indexOf("\"", valueStart)
+            if (valueEnd == -1) return null
+            payloadJson.substring(valueStart, valueEnd)
         } catch (e: Exception) {
             null
         }
