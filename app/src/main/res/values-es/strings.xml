@@ -198,6 +198,12 @@
     <string name="watch_trailer_with">Ver tráiler con...</string>
     <string name="youtube">YouTube</string>
     <string name="smarttube">SmartTube</string>
+    <string name="backup_category_title">Copia de seguridad y restauración</string>
+    <string name="backup_export_title">Exportar datos de usuario</string>
+    <string name="backup_export_summary">Guarda tus datos (favoritos, historial de visualización) en un archivo.</string>
+    <string name="backup_import_title">Importar datos de usuario</string>
+    <string name="backup_import_summary">Restaura tus datos desde un archivo de copia de seguridad.</string>
+    
     <string name="backup_export_success">¡Copia de seguridad exportada correctamente!</string>
     <string name="backup_export_error_write">Error al exportar la copia de seguridad.</string>
     <string name="backup_data_not_generated">Error: datos de copia de seguridad no generados.</string>

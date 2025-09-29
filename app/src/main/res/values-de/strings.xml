@@ -211,6 +211,12 @@
     <string name="voice_error_no_result">Es wurde keine Spracheingabe erkannt.</string>
     <string name="voice_prompt">Sprich jetzt</string>
 
+    <string name="backup_category_title">Backup und Wiederherstellung</string>
+    <string name="backup_export_title">Benutzerdaten exportieren</string>
+    <string name="backup_export_summary">Speichere deine Daten (Favoriten, Wiedergabeverlauf) in einer Datei.</string>
+    <string name="backup_import_title">Benutzerdaten importieren</string>
+    <string name="backup_import_summary">Stelle deine Daten aus einer Backup-Datei wieder her.</string>
+
     <string name="backup_export_success">Sicherung erfolgreich exportiert!</string>
     <string name="backup_export_error_write">Fehler beim Export der Sicherung.</string>
     <string name="backup_data_not_generated">Fehler: Sicherungsdaten wurden nicht erstellt.</string>

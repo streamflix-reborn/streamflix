@@ -124,6 +124,12 @@
 	<string name="voice_error_no_result">لم يتم اكتشاف أي إدخال صوتي.</string>
 	<string name="voice_prompt">تحدث الآن</string>
 
+	<string name="backup_category_title">النسخ الاحتياطي والاستعادة</string>
+	<string name="backup_export_title">تصدير بيانات المستخدم</string>
+	<string name="backup_export_summary">احفظ بياناتك (المفضلة، سجل المشاهدة) في ملف.</string>
+	<string name="backup_import_title">استيراد بيانات المستخدم</string>
+	<string name="backup_import_summary">استعد بياناتك من ملف النسخ الاحتياطي.</string>
+
 	<string name="backup_export_success">تم تصدير النسخة الاحتياطية بنجاح!</string>
 	<string name="backup_export_error_write">حدث خطأ أثناء تصدير النسخة الاحتياطية.</string>
 	<string name="backup_data_not_generated">خطأ: لم يتم إنشاء بيانات النسخ الاحتياطي.</string>

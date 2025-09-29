@@ -216,6 +216,12 @@
     <string name="youtube">YouTube</string>
     <string name="smarttube">SmartTube</string>
     
+    <string name="backup_category_title">Backup and Restore</string>
+    <string name="backup_export_title">Export user data</string>
+    <string name="backup_export_summary">Save your data (favorites, watch history) to a file.</string>
+    <string name="backup_import_title">Import user data</string>
+    <string name="backup_import_summary">Restore your data from a backup file.</string>
+    
     <string name="backup_export_success">Backup exported successfully!</string>
     <string name="backup_export_error_write">Error while exporting the backup.</string>
     <string name="backup_data_not_generated">Error: backup data not generated.</string>

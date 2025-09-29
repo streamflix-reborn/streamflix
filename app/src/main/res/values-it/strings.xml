@@ -213,6 +213,12 @@
 
     <string name="watch_trailer_with">Guarda il trailer con...</string>
     
+    <string name="backup_category_title">Backup e Ripristino</string>
+    <string name="backup_export_title">Esporta dati utente</string>
+    <string name="backup_export_summary">Salva i tuoi dati (preferiti, cronologia visione) in un file.</string>
+    <string name="backup_import_title">Importa dati utente</string>
+    <string name="backup_import_summary">Ripristina i tuoi dati da un file di backup.</string>
+    
     <string name="backup_export_success">Backup esportato con successo!</string>
     <string name="backup_export_error_write">Errore durante l\'esportazione del backup.</string>
     <string name="backup_data_not_generated">Errore: dati di backup non generati.</string>
