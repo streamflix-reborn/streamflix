@@ -18,6 +18,7 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentMovieMobileBinding
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
@@ -65,12 +66,15 @@ class MovieMobileFragment : Fragment() {
                             state.error.message ?: "",
                             Toast.LENGTH_SHORT
                         ).show()
-                        binding.isLoading.apply {
+                            binding.isLoading.apply {
                             pbIsLoading.visibility = View.GONE
                             gIsLoadingRetry.visibility = View.VISIBLE
-                            btnIsLoadingRetry.setOnClickListener {
-                                viewModel.getMovie(args.id)
-                            }
+                                val doRetry = { viewModel.getMovie(args.id) }
+                                btnIsLoadingRetry.setOnClickListener { doRetry() }
+                                btnIsLoadingClearCache.setOnClickListener {
+                                    CacheUtils.clearAppCache(requireContext())
+                                    doRetry()
+                                }
                         }
                     }
                 }

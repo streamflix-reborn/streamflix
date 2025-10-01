@@ -247,21 +247,23 @@ object AnimefenixProvider : Provider {
             val document = service.getPage(url)
             val script = document.selectFirst("script:containsData(var tabsArray)") ?: return emptyList()
 
-            script.data()
+            val names = document.select(".episode-page__servers-list li a").map { a ->
+                a.select("span").last()?.text()?.trim().orEmpty()
+            }
+
+            val urls = script.data()
                 .substringAfter("<iframe").split("src='")
                 .drop(1)
                 .map { it.substringBefore("'").substringAfter("redirect.php?id=").trim() }
-                .mapNotNull { serverUrl ->
-                    try {
-                        val serverName = serverUrl.toHttpUrl().host
-                            .replaceFirst("www.", "")
-                            .substringBefore(".")
-                            .replaceFirstChar { it.titlecase() }
-                        Video.Server(id = serverUrl, name = serverName)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
+
+            val count = minOf(urls.size, names.size)
+            val servers = (0 until count).mapNotNull { i ->
+                val name = names[i].ifBlank { return@mapNotNull null }
+                val urlValue = urls[i]
+                Video.Server(id = urlValue, name = name)
+            }
+
+            servers
         } catch (e: Exception) {
             emptyList()
         }

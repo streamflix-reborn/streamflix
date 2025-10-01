@@ -3,6 +3,7 @@
     <string name="app_name">Streamflix</string>
     <string name="loading_error_title">Ha ocurrido un error</string>
     <string name="loading_error_retry">Reintentar</string>
+    <string name="loading_error_clear_cache">Vaciar caché</string>
     <string name="update_title">Actualización disponible</string>
     <string name="update_message">Una nueva versión de la aplicación está disponible</string>
     <string name="update_current_version_label">Versión actual</string>
@@ -184,6 +185,8 @@
     <string name="settings_autoplay_off">Desactivada</string>
     <string name="autoplay_settings">Ajustes de reproducción automatica</string>
     <string name="miscelaneous_title">Varios</string>
+    <string name="clear_cache_done">Caché vaciada</string>
+    <string name="clear_cache_done_409">Caché vaciada automáticamente por error HTTP 409</string>
     <string name="player_skip_intro">Omitir intro</string>
     <string name="voice_search">Búsqueda por voz</string>
     <string name="voice_error_no_match">No se reconoció nada</string>

@@ -3,6 +3,7 @@
 
     <string name="loading_error_title">An error occurred</string>
     <string name="loading_error_retry">Retry</string>
+    <string name="loading_error_clear_cache">Clear cache</string>
 
     <string name="update_title">New Update Available</string>
     <string name="update_message">A new version of the app is available!</string>
@@ -200,6 +201,8 @@
     <string name="settings_autoplay_off">Off</string>
     <string name="autoplay_settings">Autoplay settings</string>
     <string name="miscelaneous_title">Miscellaneous</string>
+    <string name="clear_cache_done">Cache cleared</string>
+    <string name="clear_cache_done_409">Cache cleared automatically due to HTTP 409</string>
     <string name="player_skip_intro">Skip intro</string>
     <string name="voice_search">Voice search</string>
     <string name="voice_error_no_match">Nothing was recognized</string>

@@ -4,6 +4,7 @@
 
 	<string name="loading_error_title">حدث خطأ</string>
 	<string name="loading_error_retry">إعادة المحاولة</string>
+	<string name="loading_error_clear_cache">مسح ذاكرة التخزين المؤقت</string>
 
 	<string name="update_title">تحديث جديد متاح</string>
 	<string name="update_message">يتوفر إصدار جديد من التطبيق!</string>
@@ -113,6 +114,8 @@
 	<string name="settings_autoplay_off">إيقاف</string>
 	<string name="autoplay_settings">إعدادات التشغيل التلقائي</string>
 	<string name="miscelaneous_title">متفرقات</string>
+	<string name="clear_cache_done">تم مسح الذاكرة المؤقتة</string>
+	<string name="clear_cache_done_409">تم مسح الذاكرة المؤقتة تلقائيًا بسبب خطأ HTTP 409</string>
 	<string name="voice_search">بحث صوتي</string>
 	<string name="voice_error_no_match">لم يتم التعرف على أي شيء</string>
 	<string name="voice_error_timeout">انتهت المهلة</string>

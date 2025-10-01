@@ -20,11 +20,14 @@ import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
 
 class GenreMobileFragment : Fragment() {
+
+    private var hasAutoCleared409: Boolean = false
 
     private var _binding: FragmentGenreMobileBinding? = null
     private val binding get() = _binding!!
@@ -64,6 +67,14 @@ class GenreMobileFragment : Fragment() {
                         binding.isLoading.root.visibility = View.GONE
                     }
                     is GenreViewModel.State.FailedLoading -> {
+                        val code = (state.error as? retrofit2.HttpException)?.code()
+                        if (code == 409 && !hasAutoCleared409) {
+                            hasAutoCleared409 = true
+                            CacheUtils.clearAppCache(requireContext())
+                            android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done_409), android.widget.Toast.LENGTH_SHORT).show()
+                            viewModel.getGenre(args.id)
+                            return@collect
+                        }
                         Toast.makeText(
                             requireContext(),
                             state.error.message ?: "",
@@ -75,8 +86,12 @@ class GenreMobileFragment : Fragment() {
                             binding.isLoading.apply {
                                 pbIsLoading.visibility = View.GONE
                                 gIsLoadingRetry.visibility = View.VISIBLE
-                                btnIsLoadingRetry.setOnClickListener {
-                                    viewModel.getGenre(args.id)
+                                val doRetry = { viewModel.getGenre(args.id) }
+                                btnIsLoadingRetry.setOnClickListener { doRetry() }
+                                btnIsLoadingClearCache.setOnClickListener {
+                                    CacheUtils.clearAppCache(requireContext())
+                                    android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done), android.widget.Toast.LENGTH_SHORT).show()
+                                    doRetry()
                                 }
                             }
                         }

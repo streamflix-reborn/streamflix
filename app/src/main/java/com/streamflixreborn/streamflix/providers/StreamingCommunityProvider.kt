@@ -505,32 +505,6 @@ object StreamingCommunityProvider : Provider {
         }
     }
 
-    // Retry HTTP 409 with short backoff
-    private class RetryOn409Interceptor : Interceptor {
-        override fun intercept(chain: Interceptor.Chain): Response {
-            var attempt = 0
-            var lastException: Exception? = null
-            while (attempt < 2) {
-                try {
-                    val response = chain.proceed(chain.request())
-                    if (response.code != 409) {
-                        return response
-                    }
-                    response.close()
-                    // short backoff
-                    try { Thread.sleep(350L * (attempt + 1)) } catch (_: InterruptedException) {}
-                    attempt++
-                    continue
-                } catch (e: Exception) {
-                    lastException = e
-                    break
-                }
-            }
-            // Final attempt without further retries
-            return chain.proceed(chain.request())
-        }
-    }
-
     private interface StreamingCommunityService {
 
         companion object {
@@ -547,7 +521,6 @@ object StreamingCommunityProvider : Provider {
                     .addInterceptor(UserAgentInterceptor(USER_AGENT))
                     .addNetworkInterceptor(RedirectInterceptor())
                     .addInterceptor(logging) // Aggiunto HttpLoggingInterceptor 
-                    .addInterceptor(RetryOn409Interceptor())
 
                 val dohProviderUrl = UserPreferences.dohProviderUrl
                 if (dohProviderUrl.isNotEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {

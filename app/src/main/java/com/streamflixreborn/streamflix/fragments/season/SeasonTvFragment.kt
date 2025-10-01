@@ -18,11 +18,14 @@ import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentSeasonTvBinding
 import com.streamflixreborn.streamflix.models.Episode
+import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
 
 class SeasonTvFragment : Fragment() {
+
+    private var hasAutoCleared409: Boolean = false
 
     private var _binding: FragmentSeasonTvBinding? = null
     private val binding get() = _binding!!
@@ -68,6 +71,15 @@ class SeasonTvFragment : Fragment() {
                     }
 
                     is SeasonViewModel.State.FailedLoadingEpisodes -> {
+                        // Auto clear cache on HTTP 409 and retry
+                        val code = (state.error as? retrofit2.HttpException)?.code()
+                        if (code == 409 && !hasAutoCleared409) {
+                            hasAutoCleared409 = true
+                            CacheUtils.clearAppCache(requireContext())
+                            android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done_409), android.widget.Toast.LENGTH_SHORT).show()
+                            viewModel.getSeasonEpisodes(args.seasonId)
+                            return@collect
+                        }
                         Toast.makeText(
                             requireContext(),
                             state.error.message ?: "",
@@ -76,7 +88,10 @@ class SeasonTvFragment : Fragment() {
                         binding.isLoading.apply {
                             pbIsLoading.visibility = View.GONE
                             gIsLoadingRetry.visibility = View.VISIBLE
-                            btnIsLoadingRetry.setOnClickListener {
+                            btnIsLoadingRetry.setOnClickListener { viewModel.getSeasonEpisodes(args.seasonId) }
+                            btnIsLoadingClearCache.setOnClickListener {
+                                CacheUtils.clearAppCache(requireContext())
+                                android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done), android.widget.Toast.LENGTH_SHORT).show()
                                 viewModel.getSeasonEpisodes(args.seasonId)
                             }
                             btnIsLoadingRetry.requestFocus()

@@ -47,12 +47,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_is_loading_error" />
 
+    <TextView
+        android:id="@+id/btn_is_loading_clear_cache"
+        style="@style/AppTheme.Widget.Tv.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:text="@string/loading_error_clear_cache"
+        app:layout_constraintTop_toBottomOf="@id/btn_is_loading_retry"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <androidx.constraintlayout.widget.Group
         android:id="@+id/g_is_loading_retry"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:constraint_referenced_ids="tv_is_loading_error,btn_is_loading_retry"
+        app:constraint_referenced_ids="tv_is_loading_error,btn_is_loading_retry,btn_is_loading_clear_cache"
         tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

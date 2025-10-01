@@ -17,10 +17,13 @@ import com.streamflixreborn.streamflix.databinding.FragmentTvShowsTvBinding
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.utils.UserPreferences
+import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
 
 class TvShowsTvFragment : Fragment() {
+
+    private var hasAutoCleared409: Boolean = false
 
     private var _binding: FragmentTvShowsTvBinding? = null
     private val binding get() = _binding!!
@@ -60,6 +63,15 @@ class TvShowsTvFragment : Fragment() {
                         binding.isLoading.root.visibility = View.GONE
                     }
                     is TvShowsViewModel.State.FailedLoading -> {
+                        val code = (state.error as? retrofit2.HttpException)?.code()
+                        if (code == 409 && !hasAutoCleared409) {
+                            hasAutoCleared409 = true
+                            CacheUtils.clearAppCache(requireContext())
+                            android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done_409), android.widget.Toast.LENGTH_SHORT).show()
+                            if (appAdapter.isLoading) appAdapter.isLoading = false
+                            viewModel.getTvShows()
+                            return@collect
+                        }
                         Toast.makeText(
                             requireContext(),
                             state.error.message ?: "",
@@ -71,7 +83,10 @@ class TvShowsTvFragment : Fragment() {
                             binding.isLoading.apply {
                                 pbIsLoading.visibility = View.GONE
                                 gIsLoadingRetry.visibility = View.VISIBLE
-                                btnIsLoadingRetry.setOnClickListener {
+                                btnIsLoadingRetry.setOnClickListener { viewModel.getTvShows() }
+                                btnIsLoadingClearCache.setOnClickListener {
+                                    CacheUtils.clearAppCache(requireContext())
+                                    android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done), android.widget.Toast.LENGTH_SHORT).show()
                                     viewModel.getTvShows()
                                 }
                                 binding.vgvTvShows.visibility = View.GONE

@@ -3,6 +3,7 @@
 
     <string name="loading_error_title">Si è verificato un errore</string>
     <string name="loading_error_retry">Riprova</string>
+    <string name="loading_error_clear_cache">Svuota cache</string>
 
     <string name="update_title">Nuovo Aggiornamento Disponibile</string>
     <string name="update_message">una nuova versione dell\'app è disponibile!</string>
@@ -200,6 +201,8 @@
     <string name="settings_autoplay_off">Disattiva</string>
     <string name="autoplay_settings">Impostazioni di riproduzione automatica</string>
     <string name="miscelaneous_title">Varie</string>
+    <string name="clear_cache_done">Cache svuotata</string>
+    <string name="clear_cache_done_409">Cache svuotata automaticamente per errore HTTP 409</string>
     <string name="voice_search">Ricerca vocale</string>
     <string name="voice_error_no_match">Nessun risultato riconosciuto</string>
     <string name="voice_error_timeout">Tempo scaduto</string>
