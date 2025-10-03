@@ -13,6 +13,12 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import okhttp3.OkHttpClient
+import javax.net.ssl.SSLHandshakeException
+import java.security.cert.CertPathValidatorException
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import javax.net.ssl.SSLContext
+import java.security.SecureRandom
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -34,11 +40,26 @@ object AnimeWorldProvider : Provider {
     override val logo = "https://static.animeworld.ac/assets/images/favicon/android-icon-192x192.png?4"
     override val language = "it"
 
-    private val service = AnimeWorldService.build()
+    private var service = AnimeWorldService.build()
+
+    private fun rebuildServiceUnsafe() {
+        service = AnimeWorldService.buildUnsafe()
+    }
+
+    private suspend fun <T> withSslFallback(block: suspend (AnimeWorldService) -> T): T {
+        return try {
+            block(service)
+        } catch (e: Exception) {
+            val isSsl = e is SSLHandshakeException || e is CertPathValidatorException
+            if (!isSsl) throw e
+            rebuildServiceUnsafe()
+            block(service)
+        }
+    }
 
 
     override suspend fun getHome(): List<Category> {
-        val document = service.getHome()
+        val document = withSslFallback { it.getHome() }
 
         val categories = mutableListOf<Category>()
 
@@ -188,7 +209,7 @@ object AnimeWorldProvider : Provider {
 
     override suspend fun search(query: String, page: Int): List<AppAdapter.Item> {
         if (query.isEmpty()) {
-            val document = service.getHome()
+            val document = withSslFallback { it.getHome() }
 
             val genres = document.select("#categories-menu .sub li a")
                 .map {
@@ -202,7 +223,7 @@ object AnimeWorldProvider : Provider {
             return genres
         }
 
-        val document = service.search(query.replace(" ", "+"), page)
+        val document = withSslFallback { it.search(query.replace(" ", "+"), page) }
         if (page > 1) {
             if (document.select("#paging-form").size == 0
                 || page > (document.selectFirst("#paging-form span.total")?.text()?.toInt() ?: 0)
@@ -241,7 +262,7 @@ object AnimeWorldProvider : Provider {
     }
 
     override suspend fun getMovies(page: Int): List<Movie> {
-        val document = service.getMovies(page)
+        val document = withSslFallback { it.getMovies(page) }
         if (page > 1) {
             if (document.select("#paging-form").size == 0
                 || page > (document.selectFirst("#paging-form span.total")?.text()?.toInt() ?: 0)
@@ -265,7 +286,7 @@ object AnimeWorldProvider : Provider {
     }
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
-        val document = service.getTvSeries(page)
+        val document = withSslFallback { it.getTvSeries(page) }
         if (page > 1) {
             if (document.select("#paging-form").size == 0
                 || page > (document.selectFirst("#paging-form span.total")?.text()?.toInt() ?: 0)
@@ -290,7 +311,7 @@ object AnimeWorldProvider : Provider {
 
 
     override suspend fun getMovie(id: String): Movie {
-        val document = service.getDetails(id)
+        val document = withSslFallback { it.getDetails(id) }
 
         val movie = Movie(
             id = id,
@@ -372,7 +393,7 @@ object AnimeWorldProvider : Provider {
     }
 
     override suspend fun getTvShow(id: String): TvShow {
-        val document = service.getDetails(id)
+        val document = withSslFallback { it.getDetails(id) }
 
         val tvShow = TvShow(
             id = id,
@@ -519,7 +540,7 @@ object AnimeWorldProvider : Provider {
 
 
     override suspend fun getGenre(id: String, page: Int): Genre {
-        val document = service.getGenre(id, page)
+        val document = withSslFallback { it.getGenre(id, page) }
         if (page > 1) {
             if (document.select("#paging-form").size == 0
                 || page > (document.selectFirst("#paging-form span.total")?.text()?.toInt() ?: 0)
@@ -569,7 +590,7 @@ object AnimeWorldProvider : Provider {
 
 
     override suspend fun getPeople(id: String, page: Int): People {
-        val document = service.getPeople(id, page)
+        val document = withSslFallback { it.getPeople(id, page) }
         if (page > 1) {
             if (document.select("#paging-form").size == 0
                 || page > (document.selectFirst("#paging-form span.total")?.text()?.toInt() ?: 0)
@@ -619,7 +640,7 @@ object AnimeWorldProvider : Provider {
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val split = id.split("/")
         val showId = split[0]
-        val document = service.getDetails(showId)
+        val document = withSslFallback { it.getDetails(showId) }
 
         // episode main id
         val episodeId = when (videoType) {
@@ -651,7 +672,7 @@ object AnimeWorldProvider : Provider {
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
-        val link = service.getLink(server.id, 0)
+        val link = withSslFallback { it.getLink(server.id, 0) }
 
         if (server.name == "Streamtape")
             return Extractor.extract(link.grabber.substringBeforeLast("/"))
@@ -685,6 +706,36 @@ object AnimeWorldProvider : Provider {
                     .cookieJar(MyCookieJar())
                     .readTimeout(30, TimeUnit.SECONDS)
                     .connectTimeout(30, TimeUnit.SECONDS)
+                    .build()
+
+                val retrofit = Retrofit.Builder()
+                    .baseUrl(URL)
+                    .addConverterFactory(JsoupConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(client)
+                    .build()
+
+                return retrofit.create(AnimeWorldService::class.java)
+            }
+
+            fun buildUnsafe(): AnimeWorldService {
+                val trustAllCerts = arrayOf<TrustManager>(
+                    object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+                    }
+                )
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+                val trustManager = trustAllCerts[0] as X509TrustManager
+
+                val client = OkHttpClient.Builder()
+                    .cookieJar(MyCookieJar())
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .sslSocketFactory(sslContext.socketFactory, trustManager)
+                    .hostnameVerifier { _, _ -> true }
                     .build()
 
                 val retrofit = Retrofit.Builder()

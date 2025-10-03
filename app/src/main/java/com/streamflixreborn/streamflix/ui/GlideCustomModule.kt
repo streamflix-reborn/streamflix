@@ -15,6 +15,10 @@ import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import javax.net.ssl.SSLContext
+import java.security.SecureRandom
 
 @GlideModule
 class GlideCustomModule : AppGlideModule() {
@@ -22,15 +26,28 @@ class GlideCustomModule : AppGlideModule() {
 
     private fun getOkHttpClient(): OkHttpClient {
         val appCache = Cache(File("cacheDir", "okhttpcache"), 10 * 1024 * 1024)
-        val clientBuilder = Builder().cache(appCache).readTimeout(30, TimeUnit.SECONDS)
-            .connectTimeout(30, TimeUnit.SECONDS)
-        val client = clientBuilder.addNetworkInterceptor(
-            HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
-        ).build()
 
-        val dns = DnsOverHttps.Builder().client(client).url(DNS_QUERY_URL.toHttpUrl()).build()
-        val clientToReturn = clientBuilder.dns(dns).build()
-        return clientToReturn
+        val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
+
+        // Always trust-all for image loading to avoid SSL issues on some devices/hosts
+        val trustAllCerts = arrayOf<TrustManager>(
+            object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+            }
+        )
+        val sslContext = SSLContext.getInstance("TLS").apply { init(null, trustAllCerts, SecureRandom()) }
+        val trustManager = trustAllCerts[0] as X509TrustManager
+
+        return Builder()
+            .cache(appCache)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .sslSocketFactory(sslContext.socketFactory, trustManager)
+            .hostnameVerifier { _, _ -> true }
+            .build()
     }
 
     override fun registerComponents(

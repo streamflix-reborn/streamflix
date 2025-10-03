@@ -24,6 +24,8 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import okhttp3.logging.HttpLoggingInterceptor // Import aggiunto
 import org.json.JSONObject
+import org.jsoup.parser.Parser
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -32,9 +34,15 @@ import retrofit2.http.Header
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLHandshakeException
+import java.security.cert.CertPathValidatorException
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import javax.net.ssl.SSLContext
+import java.security.SecureRandom
 
 object StreamingCommunityProvider : Provider {
-    private const val DEFAULT_DOMAIN: String = "streamingcommunityz.at"
+    private const val DEFAULT_DOMAIN: String = "streamingcommunityz.li"
     override val baseUrl = DEFAULT_DOMAIN
     private var _domain: String? = null
     private var domain: String
@@ -68,15 +76,65 @@ object StreamingCommunityProvider : Provider {
     private var service = StreamingCommunityService.build("https://$domain/")
 
     fun rebuildService(newDomain: String = domain) {
-        service = StreamingCommunityService.build("https://$newDomain/")
+        val finalBase = resolveFinalBaseUrl("https://$newDomain/")
+        domain = finalBase.substringAfter("https://").substringBefore("/")
+        service = StreamingCommunityService.build(finalBase)
+    }
+
+    private fun rebuildServiceUnsafe(newDomain: String = domain) {
+        val finalBase = resolveFinalBaseUrl("https://$newDomain/")
+        domain = finalBase.substringAfter("https://").substringBefore("/")
+        service = StreamingCommunityService.buildUnsafe(finalBase)
+    }
+
+    private fun resolveFinalBaseUrl(startBaseUrl: String): String {
+        return try {
+            val client = OkHttpClient.Builder()
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .build()
+            val req = okhttp3.Request.Builder().url(startBaseUrl).get().build()
+            client.newCall(req).execute().use { resp ->
+                val finalUrl = resp.request.url
+                finalUrl.scheme + "://" + finalUrl.host + "/"
+            }
+        } catch (_: Exception) {
+            startBaseUrl
+        }
+    }
+
+    private suspend fun <T> withSslFallback(block: suspend (StreamingCommunityService) -> T): T {
+        return try {
+            block(service)
+        } catch (e: Exception) {
+            val isSsl = e is SSLHandshakeException || e is CertPathValidatorException
+            if (!isSsl) throw e
+            rebuildServiceUnsafe(domain)
+            block(service)
+        }
     }
 
     private var version: String = ""
         get() {
             if (field != "") return field
 
-            val document = runBlocking { service.getHome() }
-            field = JSONObject(document.selectFirst("#app")?.attr("data-page") ?: "").getString("version")
+            val document = runBlocking { withSslFallback { it.getHome() } }
+            val dataAttr = document.selectFirst("#app")?.attr("data-page") ?: ""
+            val decoded = Parser.unescapeEntities(dataAttr, false)
+            val dataJson = JSONObject(decoded)
+            // Update domain if app_url points to a different host (regardless of TLD)
+            try {
+                val props = dataJson.optJSONObject("props")
+                val appUrl = props?.optString("app_url") ?: ""
+                if (appUrl.startsWith("http")) {
+                    val newHost = appUrl.substringAfter("://").substringBefore("/")
+                    if (newHost.isNotEmpty() && newHost != domain) {
+                        domain = newHost
+                        rebuildService(newHost)
+                    }
+                }
+            } catch (_: Exception) { }
+            field = dataJson.getString("version")
             return field
         }
 
@@ -87,7 +145,7 @@ object StreamingCommunityProvider : Provider {
     }
 
     override suspend fun getHome(): List<Category> {
-        val res = service.getHome(version = version)
+        val res = withSslFallback { it.getHome(version = version) }
         if (version != res.version) version = res.version
 
         val mainTitles = res.props.sliders[2].titles
@@ -163,7 +221,7 @@ object StreamingCommunityProvider : Provider {
             }.sortedBy { it.name }
         }
 
-        val res = service.search(query, (page - 1) * MAX_SEARCH_RESULTS)
+        val res = withSslFallback { it.search(query, (page - 1) * MAX_SEARCH_RESULTS) }
         if (res.currentPage == null || res.lastPage == null || res.currentPage > res.lastPage) {
             return listOf()
         }
@@ -194,7 +252,7 @@ object StreamingCommunityProvider : Provider {
         if (page > 1)
             return listOf()
 
-        val res = service.getArchive(type = "movie", version = version)
+        val res = withSslFallback { it.getArchive(type = "movie", version = version) }
 
         val movies = mutableListOf<Movie>()
 
@@ -219,7 +277,7 @@ object StreamingCommunityProvider : Provider {
         if (page > 1)
             return listOf()
 
-        val res = service.getArchive(type = "tv", version = version)
+        val res = withSslFallback { it.getArchive(type = "tv", version = version) }
 
         val tvShows = mutableListOf<TvShow>()
 
@@ -242,7 +300,7 @@ object StreamingCommunityProvider : Provider {
 
 
     override suspend fun getMovie(id: String): Movie {
-        val res = service.getDetails(id, version = version)
+        val res = withSslFallback { it.getDetails(id, version = version) }
         if (version != res.version) version = res.version
 
         val title = res.props.title
@@ -299,7 +357,7 @@ object StreamingCommunityProvider : Provider {
     }
 
     override suspend fun getTvShow(id: String): TvShow {
-        val res = service.getDetails(id, version = version)
+        val res = withSslFallback { it.getDetails(id, version = version) }
         if (version != res.version) version = res.version
 
         val title = res.props.title
@@ -364,7 +422,7 @@ object StreamingCommunityProvider : Provider {
 
 
     override suspend fun getEpisodesBySeason(seasonId: String): List<Episode> {
-        val res = service.getSeasonDetails(seasonId, version = version)
+        val res = withSslFallback { it.getSeasonDetails(seasonId, version = version) }
         if (version != res.version) version = res.version
 
         return res.props.loadedSeason.episodes.map {
@@ -379,7 +437,7 @@ object StreamingCommunityProvider : Provider {
 
 
     override suspend fun getGenre(id: String, page: Int): Genre {
-        val res = service.getArchive(genreId = id, offset = (page - 1) * MAX_SEARCH_RESULTS, version = version)
+        val res = withSslFallback { it.getArchive(genreId = id, offset = (page - 1) * MAX_SEARCH_RESULTS, version = version) }
 
         val genre = Genre(
             id = id,
@@ -412,7 +470,7 @@ object StreamingCommunityProvider : Provider {
 
 
     override suspend fun getPeople(id: String, page: Int): People {
-        val res = service.search(id, (page - 1) * MAX_SEARCH_RESULTS)
+        val res = withSslFallback { it.search(id, (page - 1) * MAX_SEARCH_RESULTS) }
         if (res.currentPage == null || res.lastPage == null || res.currentPage > res.lastPage) {
             return People(
                 id = id,
@@ -448,15 +506,12 @@ object StreamingCommunityProvider : Provider {
 
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
-        val document = when (videoType) {
-            is Video.Type.Movie -> service.getIframe(
-                id.substringBefore("-")
-            )
-            is Video.Type.Episode -> service.getIframe(
-                id.substringBefore("?"),
-                id.substringAfter("=")
-            )
+        val base = "https://$domain/"
+        val iframeUrl = when (videoType) {
+            is Video.Type.Movie -> base + "$LANG/iframe/" + id.substringBefore("-")
+            is Video.Type.Episode -> base + "$LANG/iframe/" + id.substringBefore("?") + "?episode_id=" + id.substringAfter("=") + "&next_episode=1"
         }
+        val document = StreamingCommunityService.fetchDocumentWithRedirectsAndSslFallback(iframeUrl, base)
 
         val src = document.selectFirst("iframe")?.attr("src") ?: ""
 
@@ -494,13 +549,37 @@ object StreamingCommunityProvider : Provider {
 
     private class RedirectInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
-            val response = chain.proceed(chain.request())
-            val location = response.header("Location")
-            if (!location.isNullOrEmpty()) {
-                domain = location
-                    .substringAfter("https://")
-                    .substringBefore("/")
+            var request = chain.request()
+            var response = chain.proceed(request)
+
+            val visited = mutableSetOf<String>()
+            while (response.isRedirect) {
+                val location = response.header("Location")
+                if (location.isNullOrEmpty()) break
+
+                val newUrl = if (location.startsWith("http")) location else {
+                    val base = request.url
+                    base.resolve(location)?.toString() ?: break
+                }
+
+                // detect redirect loops
+                if (!visited.add(newUrl)) {
+                    break
+                }
+
+                // Update provider domain from absolute URL
+                val host = newUrl.substringAfter("https://").substringBefore("/")
+                if (host.isNotEmpty()) {
+                    domain = host
+                }
+
+                response.close()
+                request = request.newBuilder()
+                    .url(newUrl)
+                    .build()
+                response = chain.proceed(request)
             }
+
             return response
         }
     }
@@ -517,10 +596,11 @@ object StreamingCommunityProvider : Provider {
                 val clientBuilder = OkHttpClient.Builder()
                     .readTimeout(30, TimeUnit.SECONDS)
                     .connectTimeout(30, TimeUnit.SECONDS)
+                    .followRedirects(true)
+                    .followSslRedirects(true)
                     .addInterceptor(RefererInterceptor(baseUrl))
                     .addInterceptor(UserAgentInterceptor(USER_AGENT))
-                    .addNetworkInterceptor(RedirectInterceptor())
-                    .addInterceptor(logging) // Aggiunto HttpLoggingInterceptor 
+                    .addInterceptor(logging) // Added HttpLoggingInterceptor
 
                 val dohProviderUrl = UserPreferences.dohProviderUrl
                 if (dohProviderUrl.isNotEmpty() && dohProviderUrl != UserPreferences.DOH_DISABLED_VALUE) {
@@ -570,6 +650,112 @@ object StreamingCommunityProvider : Provider {
                     .build()
 
                 return retrofit.create(StreamingCommunityService::class.java)
+            }
+
+            fun buildUnsafe(baseUrl: String): StreamingCommunityService {
+                val trustAllCerts = arrayOf<TrustManager>(
+                    object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+                    }
+                )
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+                val trustManager = trustAllCerts[0] as X509TrustManager
+
+                val logging = HttpLoggingInterceptor()
+                logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+
+                val client = OkHttpClient.Builder()
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .followRedirects(true)
+                    .followSslRedirects(true)
+                    .addInterceptor(RefererInterceptor(baseUrl))
+                    .addInterceptor(UserAgentInterceptor(USER_AGENT))
+                    .addInterceptor(logging) // Added HttpLoggingInterceptor
+                    .sslSocketFactory(sslContext.socketFactory, trustManager)
+                    .hostnameVerifier { _, _ -> true }
+                    .build()
+
+                val retrofit = Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .addConverterFactory(JsoupConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(client)
+                    .build()
+
+                return retrofit.create(StreamingCommunityService::class.java)
+            }
+
+            private fun buildManualClientUnsafe(): OkHttpClient {
+                val trustAllCerts = arrayOf<TrustManager>(
+                    object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+                    }
+                )
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, SecureRandom())
+                val trustManager = trustAllCerts[0] as X509TrustManager
+                return OkHttpClient.Builder()
+                    .followRedirects(false)
+                    .followSslRedirects(false)
+                    .sslSocketFactory(sslContext.socketFactory, trustManager)
+                    .hostnameVerifier { _, _ -> true }
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .build()
+            }
+
+            private fun buildManualClient(): OkHttpClient {
+                return OkHttpClient.Builder()
+                    .followRedirects(false)
+                    .followSslRedirects(false)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .build()
+            }
+
+            fun fetchDocumentWithRedirectsAndSslFallback(url: String, referer: String): Document {
+                return try {
+                    fetchDocumentWithRedirects(url, referer, buildManualClient())
+                } catch (e: Exception) {
+                    if (e is SSLHandshakeException || e is CertPathValidatorException) {
+                        fetchDocumentWithRedirects(url, referer, buildManualClientUnsafe())
+                    } else throw e
+                }
+            }
+
+            private fun fetchDocumentWithRedirects(urlStart: String, referer: String, client: OkHttpClient): Document {
+                var currentUrl = urlStart
+                val visited = mutableSetOf<String>()
+                while (true) {
+                    if (!visited.add(currentUrl)) {
+                        break
+                    }
+                    val req = okhttp3.Request.Builder()
+                        .url(currentUrl)
+                        .header("User-Agent", USER_AGENT)
+                        .header("Referer", referer)
+                        .get()
+                        .build()
+                    client.newCall(req).execute().use { resp ->
+                        if (resp.isRedirect) {
+                            val loc = resp.header("Location")
+                            if (loc.isNullOrEmpty()) break
+                            val resolved = resp.request.url.resolve(loc)?.toString() ?: break
+                            currentUrl = resolved
+                            continue
+                        }
+                        val body = resp.body?.string() ?: ""
+                        return Jsoup.parse(body)
+                    }
+                }
+                // fallback empty document
+                return Jsoup.parse("")
             }
         }
 
