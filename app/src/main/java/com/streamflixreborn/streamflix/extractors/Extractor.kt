@@ -75,6 +75,7 @@ abstract class Extractor {
             DroploadExtractor(),
             RpmvidExtractor(),
             YourUploadExtractor(),
+            PlusPomlaExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {

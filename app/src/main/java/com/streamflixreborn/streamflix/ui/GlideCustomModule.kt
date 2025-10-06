@@ -29,7 +29,7 @@ class GlideCustomModule : AppGlideModule() {
 
         val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
 
-        // Always trust-all for image loading to avoid SSL issues on some devices/hosts
+        // Always trust-all for image loading AND use DoH for resolution
         val trustAllCerts = arrayOf<TrustManager>(
             object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
@@ -40,6 +40,20 @@ class GlideCustomModule : AppGlideModule() {
         val sslContext = SSLContext.getInstance("TLS").apply { init(null, trustAllCerts, SecureRandom()) }
         val trustManager = trustAllCerts[0] as X509TrustManager
 
+        // Build a base client (trust-all) to bootstrap DoH
+        val bootstrap = Builder()
+            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .sslSocketFactory(sslContext.socketFactory, trustManager)
+            .hostnameVerifier { _, _ -> true }
+            .addInterceptor(logging)
+            .build()
+
+        val doh = DnsOverHttps.Builder()
+            .client(bootstrap)
+            .url(DNS_QUERY_URL.toHttpUrl())
+            .build()
+
         return Builder()
             .cache(appCache)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -47,6 +61,7 @@ class GlideCustomModule : AppGlideModule() {
             .addInterceptor(logging)
             .sslSocketFactory(sslContext.socketFactory, trustManager)
             .hostnameVerifier { _, _ -> true }
+            .dns(doh)
             .build()
     }
 

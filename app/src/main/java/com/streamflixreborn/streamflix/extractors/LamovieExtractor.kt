@@ -12,6 +12,7 @@ class LamovieExtractor : Extractor() {
 
     override val name = "Lamovie"
     override val mainUrl = "https://lamovie.link"
+    override val aliasUrls = listOf("https://vimeos.net")
 
     override suspend fun extract(link: String): Video {
         val service = Service.build(mainUrl)

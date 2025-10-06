@@ -20,6 +20,7 @@ class MixDropExtractor : Extractor() {
         "https://mixdrop.to",
         "https://mixdrop.cv",
         "https://mxdrop.to",
+        "https://md3b0j6hj.com",
     )
 
     companion object {

@@ -113,25 +113,23 @@ object Altadefinizione01Provider : Provider {
 
         val categories = mutableListOf<Category>()
 
-        doc.select("div.slider").forEach { slider ->
-            val title = slider.selectFirst(".slider-strip b")?.text()?.trim()
-                ?: return@forEach
-            val items = slider.select(".boxgrid.caption").mapNotNull { parseGridItem(it) }
+        doc.selectFirst("div.slider")?.let { slider ->
+            val title = slider.selectFirst(".slider-strip b")?.text()?.trim() ?: return@let
+            val items = slider.select("#slider .boxgrid.caption, .boxgrid.caption").mapNotNull { parseGridItem(it) }
             if (items.isNotEmpty()) {
                 categories.add(Category(name = title, list = items))
             }
         }
 
-        doc.select("div.son_eklenen").forEach { section ->
-            val strongTitle = section.selectFirst(".son_eklenen_head > strong")?.text()?.trim()
-            val title = when {
-                !strongTitle.isNullOrBlank() -> strongTitle
-                section.selectFirst(".son_eklenen_head_tv") != null -> "Sub ITA"
-                else -> return@forEach
+        doc.selectFirst("div.son_eklenen_head")?.let { head ->
+            val kapsul = head.nextElementSibling()
+            val container = when {
+                kapsul?.id() == "son_eklenen_kapsul" -> kapsul
+                else -> head.parent()?.selectFirst("#son_eklenen_kapsul")
             }
-            val items = section.select("#son_eklenen_kapsul .boxgrid.caption").mapNotNull { parseGridItem(it) }
+            val items = container?.select(".boxgrid.caption")?.mapNotNull { parseGridItem(it) } ?: emptyList()
             if (items.isNotEmpty()) {
-                categories.add(Category(name = title, list = items))
+                categories.add(Category(name = "Ultimi inseriti", list = items))
             }
         }
 
