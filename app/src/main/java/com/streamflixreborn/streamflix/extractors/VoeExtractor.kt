@@ -15,6 +15,7 @@ class VoeExtractor : Extractor() {
 
     override val name = "VOE"
     override val mainUrl = "https://voe.sx/"
+    override val aliasUrls = listOf("https://jilliandescribecompany.com")
 
 
     override suspend fun extract(link: String): Video {

@@ -7,6 +7,7 @@ abstract class Extractor {
     abstract val name: String
     abstract val mainUrl: String
     open val aliasUrls: List<String> = emptyList()
+    open val rotatingDomain: List<Regex> = emptyList()
 
     // THIS is the main method all subclasses must implement
     abstract suspend fun extract(link: String): Video
@@ -76,6 +77,7 @@ abstract class Extractor {
             RpmvidExtractor(),
             YourUploadExtractor(),
             PlusPomlaExtractor(),
+            OneuploadExtractor(),
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {
@@ -114,6 +116,12 @@ abstract class Extractor {
                             return extractor.extract(link)
                         }
                     }
+                }
+            }
+
+            for (extractor in extractors) {
+                if (extractor.rotatingDomain.any { it.containsMatchIn(compareUrl) }) {
+                    return extractor.extract(link)
                 }
             }
 

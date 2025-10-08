@@ -77,6 +77,7 @@ interface Provider {
             StreamingItaProvider to ProviderSupport(movies = true, tvShows = true),
             Altadefinizione01Provider to ProviderSupport(movies = true, tvShows = true),
             GuardaFlixProvider to ProviderSupport(movies = true, tvShows = false),
+            CB01Provider to ProviderSupport(movies = true, tvShows = true),
         )
 
         // Helper functions to check support

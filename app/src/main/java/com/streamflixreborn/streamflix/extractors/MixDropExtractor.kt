@@ -20,7 +20,10 @@ class MixDropExtractor : Extractor() {
         "https://mixdrop.to",
         "https://mixdrop.cv",
         "https://mxdrop.to",
-        "https://md3b0j6hj.com",
+        "https://mixdrop.club",
+    )
+    override val rotatingDomain = listOf(
+        Regex("^md[3bfyz][a-z0-9]*\\.[a-z0-9]+", RegexOption.IGNORE_CASE)
     )
 
     companion object {
@@ -31,9 +34,11 @@ class MixDropExtractor : Extractor() {
     override suspend fun extract(link: String): Video {
         val service = Service.build(mainUrl)
 
-        val normalizedUrl = link.replace("/f/", "/e/")
-        val document = service.getSource(
-            url = normalizedUrl,
+        val document = service.get(
+            url = link
+                .replace("/f/", "/e/")
+                .replace(".club/", ".ag/")
+                .replace(Regex("^(https?://[^/]+/e/[^/?#]+).*$", RegexOption.IGNORE_CASE), "$1"),
             userAgent = DEFAULT_USER_AGENT
         )
 
@@ -65,7 +70,7 @@ class MixDropExtractor : Extractor() {
 
     private interface Service {
         @GET
-        suspend fun getSource(
+        suspend fun get(
             @Url url: String,
             @Header("User-Agent") userAgent: String
         ): Document
