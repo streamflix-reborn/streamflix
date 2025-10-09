@@ -47,16 +47,19 @@ abstract class AppDatabase : RoomDatabase() {
             if (UserPreferences.currentProvider == null) return
 
             synchronized(this) {
-                buildDatabase(context).also { INSTANCE = it }
+                buildDatabase(UserPreferences.currentProvider!!.name, context).also { INSTANCE = it }
             }
         }
 
         fun getInstance(context: Context) =
             INSTANCE ?: synchronized(this) {
-                buildDatabase(context).also { INSTANCE = it }
+                buildDatabase(UserPreferences.currentProvider!!.name, context).also { INSTANCE = it }
             }
+        fun getInstanceForProvider(providerName: String, context: Context): AppDatabase {
+            return buildDatabase(providerName, context)
+        }
 
-        private fun buildDatabase(context: Context) =
+        private fun buildDatabase(providerName: String, context: Context) =
             Room.databaseBuilder(
                 context = context.applicationContext,
                 klass = AppDatabase::class.java,
