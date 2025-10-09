@@ -37,50 +37,60 @@ class BackupRestoreManager(
                 val providerObj = JSONObject()
                 providerObj.put("name", p.name)
 
+                // Movies
                 val moviesArray = JSONArray()
-                p.movieDao.getAll().forEach { movie ->
-                    val obj = JSONObject().apply {
-                        put("id", movie.id)
-                        put("title", movie.title)
-                        put("poster", movie.poster)
-                        put("banner", movie.banner)
-                        put("isFavorite", movie.isFavorite)
-                        put("isWatched", movie.isWatched)
-                        put("watchedDate", movie.watchedDate?.timeInMillis ?: JSONObject.NULL)
-                        put("watchHistory", movie.watchHistory?.toJson() ?: JSONObject.NULL)
+                p.movieDao.getAll()
+                    .filter { it.isWatched || it.watchedDate != null || it.watchHistory != null || it.isFavorite }
+                    .forEach { movie ->
+                        val obj = JSONObject().apply {
+                            put("id", movie.id)
+                            put("title", movie.title)
+                            put("poster", movie.poster)
+                            put("banner", movie.banner)
+                            put("isFavorite", movie.isFavorite)
+                            put("isWatched", movie.isWatched)
+                            put("watchedDate", movie.watchedDate?.timeInMillis ?: JSONObject.NULL)
+                            put("watchHistory", movie.watchHistory?.toJson() ?: JSONObject.NULL)
+                        }
+                        moviesArray.put(obj)
                     }
-                    moviesArray.put(obj)
-                }
                 providerObj.put("movies", moviesArray)
+
+                // TV Shows
                 val tvShowsArray = JSONArray()
-                p.tvShowDao.getAllForBackup().forEach { show ->
-                    val obj = JSONObject().apply {
-                        put("id", show.id)
-                        put("title", show.title)
-                        put("poster", show.poster)
-                        put("banner", show.banner)
-                        put("isFavorite", show.isFavorite)
-                        put("isWatching", show.isWatching)
+                p.tvShowDao.getAllForBackup()
+                    .filter { it.isWatching || it.isFavorite }
+                    .forEach { show ->
+                        val obj = JSONObject().apply {
+                            put("id", show.id)
+                            put("title", show.title)
+                            put("poster", show.poster)
+                            put("banner", show.banner)
+                            put("isFavorite", show.isFavorite)
+                            put("isWatching", show.isWatching)
+                        }
+                        tvShowsArray.put(obj)
                     }
-                    tvShowsArray.put(obj)
-                }
                 providerObj.put("tvShows", tvShowsArray)
 
+                // Episodes
                 val episodesArray = JSONArray()
-                p.episodeDao.getAllForBackup().forEach { ep ->
-                    val obj = JSONObject().apply {
-                        put("id", ep.id)
-                        put("number", ep.number)
-                        put("title", ep.title)
-                        put("poster", ep.poster)
-                        put("tvShowId", ep.tvShow?.id)
-                        put("seasonId", ep.season?.id)
-                        put("isWatched", ep.isWatched)
-                        put("watchedDate", ep.watchedDate?.timeInMillis ?: JSONObject.NULL)
-                        put("watchHistory", ep.watchHistory?.toJson() ?: JSONObject.NULL)
+                p.episodeDao.getAllForBackup()
+                    .filter { it.isWatched || it.watchedDate != null || it.watchHistory != null }
+                    .forEach { ep ->
+                        val obj = JSONObject().apply {
+                            put("id", ep.id)
+                            put("number", ep.number)
+                            put("title", ep.title)
+                            put("poster", ep.poster)
+                            put("tvShowId", ep.tvShow?.id)
+                            put("seasonId", ep.season?.id)
+                            put("isWatched", ep.isWatched)
+                            put("watchedDate", ep.watchedDate?.timeInMillis ?: JSONObject.NULL)
+                            put("watchHistory", ep.watchHistory?.toJson() ?: JSONObject.NULL)
+                        }
+                        episodesArray.put(obj)
                     }
-                    episodesArray.put(obj)
-                }
                 providerObj.put("episodes", episodesArray)
 
                 providersArray.put(providerObj)
@@ -93,6 +103,7 @@ class BackupRestoreManager(
             null
         }
     }
+
 
 
     fun importUserData(json: String): Boolean {
