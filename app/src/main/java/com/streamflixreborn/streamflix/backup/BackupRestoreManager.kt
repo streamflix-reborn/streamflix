@@ -111,11 +111,18 @@ class BackupRestoreManager(
             val obj = JSONObject(json)
             val providersArray = obj.optJSONArray("providers") ?: return false
 
+            Log.d("BackupRestore", "Starting import for ${providersArray.length()} providers")
+            Log.d("BackupRestore", "Available providers: ${providers.map { it.name }}")
+
             for (i in 0 until providersArray.length()) {
                 val providerObj = providersArray.optJSONObject(i) ?: continue
                 val providerName = providerObj.optString("name") ?: continue
-                val providerCtx = providers.find { it.name == providerName } ?: continue
+                val providerCtx = providers.find { it.name == providerName } ?: run {
+                    Log.w("BackupRestore", "Provider '$providerName' not found in current providers. Skipping...")
+                    continue
+                }
                 providerObj.optJSONArray("movies")?.let { arr ->
+                    Log.d("BackupRestore", "Importing ${arr.length()} movies for provider $providerName")
                     for (j in 0 until arr.length()) {
                         val m = arr.optJSONObject(j) ?: continue
                         val movie = Movie(
@@ -134,6 +141,7 @@ class BackupRestoreManager(
                 }
 
                 providerObj.optJSONArray("tvShows")?.let { arr ->
+                    Log.d("BackupRestore", "Importing ${arr.length()} TV shows for provider $providerName")
                     for (j in 0 until arr.length()) {
                         val s = arr.optJSONObject(j) ?: continue
                         val tvShow = TvShow(
@@ -150,6 +158,7 @@ class BackupRestoreManager(
                 }
 
                 providerObj.optJSONArray("episodes")?.let { arr ->
+                    Log.d("BackupRestore", "Importing ${arr.length()} episodes for provider $providerName")
                     for (j in 0 until arr.length()) {
                         val e = arr.optJSONObject(j) ?: continue
                         val ep = Episode(id = e.optString("id", "")).apply {
@@ -167,6 +176,7 @@ class BackupRestoreManager(
                 }
             }
 
+            Log.d("BackupRestore", "Import completed successfully")
             true
         } catch (t: Throwable) {
             Log.e("BackupRestore", "Error during importUserData", t)
