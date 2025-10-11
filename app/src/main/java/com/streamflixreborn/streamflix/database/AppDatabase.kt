@@ -63,7 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
             Room.databaseBuilder(
                 context = context.applicationContext,
                 klass = AppDatabase::class.java,
-                name = "${UserPreferences.currentProvider!!.name.lowercase()}.db"
+                name = "${providerName.lowercase()}.db"
             )
                 .allowMainThreadQueries()
                 .addMigrations(MIGRATION_1_2)
