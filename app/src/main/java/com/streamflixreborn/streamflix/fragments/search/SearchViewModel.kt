@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
-import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,6 +17,28 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+
+// DEFINICIONES DE ESTADO Y RESULTADOS (Fuera de la clase para mejor acceso)
+sealed class State {
+    data object Searching : State()
+    data object SearchingMore : State()
+    data class SuccessSearching(val results: List<AppAdapter.Item>, val hasMore: Boolean) : State()
+    data class FailedSearching(val error: Exception) : State()
+    data object GlobalSearching : State()
+    data class SuccessGlobalSearching(val providerResults: List<ProviderResult>) : State()
+}
+
+data class ProviderResult(
+    val provider: Provider,
+    val state: State,
+) {
+    sealed class State {
+        data object Loading : State()
+        data class Success(val results: List<AppAdapter.Item>) : State()
+        data class Error(val error: Exception) : State()
+    }
+}
+
 
 class SearchViewModel(database: AppDatabase) : ViewModel() {
 
@@ -32,6 +54,7 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
                     database.movieDao().getByIds(movies.map { it.id })
                         .collect { emit(it) }
                 }
+                // Añadido para ser exhaustivo
                 else -> emit(emptyList<Movie>())
             }
         },
@@ -43,6 +66,7 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
                     database.tvShowDao().getByIds(tvShows.map { it.id })
                         .collect { emit(it) }
                 }
+                // Añadido para ser exhaustivo
                 else -> emit(emptyList<TvShow>())
             }
         },
@@ -66,6 +90,7 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
                     hasMore = state.hasMore
                 )
             }
+            // Añadido para ser exhaustivo
             else -> state
         }
     }
@@ -73,33 +98,17 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
     var query = ""
     private var page = 1
 
-    sealed class State {
-        data object Searching : State()
-        data object SearchingMore : State()
-        data class SuccessSearching(val results: List<AppAdapter.Item>, val hasMore: Boolean) : State()
-        data class FailedSearching(val error: Exception) : State()
-    }
-
     init {
         search(query)
     }
-
 
     fun search(query: String) = viewModelScope.launch(Dispatchers.IO) {
         _state.emit(State.Searching)
 
         try {
             val results = UserPreferences.currentProvider!!.search(query)
-                .sortedBy {
-                    when (it) {
-                        is Genre -> it.name
-                        else -> ""
-                    }
-                }
-
             this@SearchViewModel.query = query
             page = 1
-
             _state.emit(State.SuccessSearching(results, true))
         } catch (e: Exception) {
             Log.e("SearchViewModel", "search: ", e)
@@ -111,12 +120,9 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
         val currentState = _state.first()
         if (currentState is State.SuccessSearching) {
             _state.emit(State.SearchingMore)
-
             try {
                 val results = UserPreferences.currentProvider!!.search(query, page + 1)
-
                 page += 1
-
                 _state.emit(
                     State.SuccessSearching(
                         results = currentState.results + results,
@@ -126,6 +132,56 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
             } catch (e: Exception) {
                 Log.e("SearchViewModel", "loadMore: ", e)
                 _state.emit(State.FailedSearching(e))
+            }
+        }
+    }
+
+    // FUNCIÓN DE BÚSQUEDA GLOBAL AÑADIDA
+    fun searchGlobal(query: String, currentLanguage: String) = viewModelScope.launch(Dispatchers.IO) {
+        _state.emit(State.GlobalSearching)
+
+        val targetProviders = Provider.providers.keys
+            .filter { it.language == currentLanguage }
+            .toList()
+
+        if (targetProviders.isEmpty()) {
+            _state.emit(State.SuccessGlobalSearching(emptyList()))
+            return@launch
+        }
+
+        val initialResults = targetProviders.map { provider ->
+            ProviderResult(provider, ProviderResult.State.Loading)
+        }
+        _state.emit(State.SuccessGlobalSearching(initialResults))
+
+        val mutableResults = initialResults.toMutableList()
+
+        // --- LÓGICA DE ORDENAMIENTO REFINADA ---
+        val stateComparator = compareBy<ProviderResult> { providerResult ->
+            when (val state = providerResult.state) {
+                // 1. Éxito CON resultados
+                is ProviderResult.State.Success -> if (state.results.isNotEmpty()) 1 else 3
+                // 2. Cargando
+                is ProviderResult.State.Loading -> 2
+                // 3. Éxito SIN resultados (ahora va después de Cargando)
+                // 4. Error
+                is ProviderResult.State.Error -> 4
+            }
+        }
+        // ------------------------------------
+
+        targetProviders.forEachIndexed { index, provider ->
+            launch {
+                try {
+                    val results = provider.search(query)
+                    mutableResults[index] = ProviderResult(provider, ProviderResult.State.Success(results))
+                } catch (e: Exception) {
+                    Log.e("SearchViewModel", "searchGlobal for ${provider.name}: ", e)
+                    mutableResults[index] = ProviderResult(provider, ProviderResult.State.Error(e))
+                }
+
+                // Emitimos la lista ordenada con la nueva lógica
+                _state.emit(State.SuccessGlobalSearching(mutableResults.sortedWith(stateComparator)))
             }
         }
     }
