@@ -15,10 +15,12 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.SwitchPreference
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.backup.BackupRestoreManager
+import com.streamflixreborn.streamflix.backup.ProviderBackupContext
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.database.dao.EpisodeDao
 import com.streamflixreborn.streamflix.database.dao.MovieDao
 import com.streamflixreborn.streamflix.database.dao.TvShowDao
+import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.StreamingCommunityProvider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.launch
@@ -65,7 +67,24 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
         movieDao = db.movieDao()
         tvShowDao = db.tvShowDao()
         episodeDao = db.episodeDao()
-        backupRestoreManager = BackupRestoreManager(requireContext(), movieDao, tvShowDao, episodeDao)
+        backupRestoreManager = BackupRestoreManager(
+            requireContext(),
+            Provider.providers.keys.mapNotNull { provider ->
+                try {
+                    val db = AppDatabase.getInstanceForProvider(provider.name.lowercase(), requireContext())
+                    ProviderBackupContext(
+                        name = provider.name,
+                        movieDao = db.movieDao(),
+                        tvShowDao = db.tvShowDao(),
+                        episodeDao = db.episodeDao()
+                    )
+                } catch (e: Exception) {
+                    Log.w("BackupRestore", "Skipping ${provider.name}: ${e.message}")
+                    null
+                }
+            }
+        )
+
 
         displaySettings()
     }
