@@ -25,6 +25,12 @@
     <string name="main_menu_tv_shows">Series</string>
     <string name="main_menu_settings">Ajustes</string>
     <string name="search_input_hint">Buscar película, serie</string>
+    <string name="global_search">Búsqueda global</string>
+    <string name="searching">Buscando...</string>
+    <string name="search_error">Error</string>
+    <string name="result">Resultado</string>
+    <string name="results">Resultados</string>
+    <string name="switching_to_provider">Cambiando a %s</string>
     <string name="home_swiper_watch_now">Ver ahora</string>
     <string name="home_continue_watching">Continuar viendo</string>
     <string name="home_favorite_movies">Películas favoritas</string>
