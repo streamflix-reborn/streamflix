@@ -97,13 +97,24 @@ class CategoryViewHolder(
 
         binding.hgvCategory.apply {
             setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // 1. Creamos el adaptador para la lista horizontal.
+            // 2. Le pasamos los listeners que este ViewHolder recibió del adaptador principal.
             adapter = AppAdapter().apply {
-                // AQUÍ ESTÁ LA MAGIA: Pasamos los listeners al adaptador interno
                 this.onMovieClickListener = onMovieClick
                 this.onTvShowClickListener = onTvShowClick
                 submitList(category.list)
             }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             setItemSpacing(category.itemSpacing)
+
+            // --- MANTENEMOS LA SOLUCIÓN DE FOCO ---
+            // Esto es crucial para que el D-Pad pueda navegar por los items.
+            isFocusable = true
+            descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+            // --- FIN DE LA SOLUCIÓN DE FOCO ---
         }
     }
 

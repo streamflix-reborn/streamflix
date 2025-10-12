@@ -29,6 +29,8 @@ import com.streamflixreborn.streamflix.utils.VoiceRecognitionHelper
 import com.streamflixreborn.streamflix.utils.hideKeyboard
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import androidx.navigation.fragment.findNavController
+import com.streamflixreborn.streamflix.providers.Provider
 
 class SearchTvFragment : Fragment() {
 
@@ -39,7 +41,31 @@ class SearchTvFragment : Fragment() {
     private val database by lazy { AppDatabase.getInstance(requireContext()) }
     private val viewModel by viewModelsFactory { SearchViewModel(database) }
 
-    private var appAdapter = AppAdapter()
+    private val appAdapter by lazy {
+        AppAdapter().apply {
+            onMovieClickListener = { movie ->
+                // Esta es la acción que se ejecutará al hacer clic en una película
+                if (movie.providerName != UserPreferences.currentProvider?.name) {
+                    UserPreferences.currentProvider = Provider.providers.keys.find { it.name == movie.providerName }
+                    Toast.makeText(requireContext(), "Cambiando a ${movie.providerName}", Toast.LENGTH_SHORT).show()
+                }
+                findNavController().navigate(
+                    SearchTvFragmentDirections.actionSearchToMovie(id = movie.id)
+                )
+            }
+            onTvShowClickListener = { tvShow ->
+                // Esta es la acción que se ejecutará al hacer clic en una serie
+                if (tvShow.providerName != UserPreferences.currentProvider?.name) {
+                    UserPreferences.currentProvider = Provider.providers.keys.find { it.name == tvShow.providerName }
+                    Toast.makeText(requireContext(), "Cambiando a ${tvShow.providerName}", Toast.LENGTH_SHORT).show()
+                }
+                findNavController().navigate(
+                    SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id)
+                )
+            }
+        }
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
     private lateinit var voiceHelper: VoiceRecognitionHelper
 
     override fun onCreateView(
@@ -56,6 +82,8 @@ class SearchTvFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
+                // --- INICIO DE LA MODIFICACIÓN #2 ---
+                // Reemplazamos el 'when' incompleto por uno exhaustivo
                 when (state) {
                     is State.Searching, is State.GlobalSearching -> {
                         binding.isLoading.apply {
@@ -63,7 +91,8 @@ class SearchTvFragment : Fragment() {
                             pbIsLoading.visibility = View.VISIBLE
                             gIsLoadingRetry.visibility = View.GONE
                         }
-                        binding.vgvSearch.adapter = AppAdapter().also { appAdapter = it }
+                        // Usamos el appAdapter que ya tiene los listeners
+                        binding.vgvSearch.adapter = appAdapter
                     }
                     is State.SearchingMore -> appAdapter.isLoading = true
                     is State.SuccessSearching -> {
@@ -79,7 +108,6 @@ class SearchTvFragment : Fragment() {
                         binding.isLoading.root.visibility = View.GONE
                     }
                     is State.FailedSearching -> {
-                        // (Mantenemos la lógica de errores igual)
                         val code = (state.error as? retrofit2.HttpException)?.code()
                         if (code == 409 && !hasAutoCleared409) {
                             hasAutoCleared409 = true
@@ -109,6 +137,7 @@ class SearchTvFragment : Fragment() {
                         }
                     }
                 }
+                // --- FIN DE LA MODIFICACIÓN #2 ---
             }
         }
     }

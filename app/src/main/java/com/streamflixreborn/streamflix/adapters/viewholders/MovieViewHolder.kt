@@ -189,28 +189,22 @@ class MovieViewHolder(
 
     private fun displayTvItem(binding: ItemMovieTvBinding) {
         binding.root.apply {
-            setOnClickListener {
-                checkProviderAndRun { // <-- USAMOS NUESTRA LÓGICA
-                    when (context.toActivity()?.getCurrentFragment()) {
-                        is HomeTvFragment -> {
-                            findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
-                            if (movie.itemType == AppAdapter.Type.MOVIE_CONTINUE_WATCHING_TV_ITEM) {
-                                findNavController().navigate(MovieTvFragmentDirections.actionMovieToPlayer(
-                                    id = movie.id,
-                                    title = movie.title,
-                                    subtitle = movie.released?.format("yyyy") ?: "",
-                                    videoType = Video.Type.Movie(id = movie.id, title = movie.title, releaseDate = movie.released?.format("yyyy-MM-dd") ?: "", poster = movie.poster ?: ""),
-                                ))
-                            }
-                        }
-                        is MovieTvFragment -> findNavController().navigate(MovieTvFragmentDirections.actionMovieToMovie(id = movie.id))
-                        is TvShowTvFragment -> findNavController().navigate(TvShowTvFragmentDirections.actionTvShowToMovie(id = movie.id))
-                    }
+            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA GLOBAL) ---
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
+                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
+                ) {
+                    // Llama al listener del adaptador al que pertenece este ViewHolder
+                    (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
+                    return@setOnKeyListener true // Evento manejado
                 }
+                return@setOnKeyListener false // Dejar que el sistema maneje otras teclas
             }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, movie)
-                    .show()
+                ShowOptionsTvDialog(context, movie).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -228,17 +222,15 @@ class MovieViewHolder(
                 }
             }
         }
-
+        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
         Glide.with(context)
             .load(movie.poster)
             .fallback(R.drawable.glide_fallback_cover)
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivMoviePoster)
-
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
-
             progress = when {
                 watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
                 else -> 0
@@ -248,7 +240,6 @@ class MovieViewHolder(
                 else -> View.GONE
             }
         }
-
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
             visibility = when {
@@ -256,10 +247,8 @@ class MovieViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
             ?: context.getString(R.string.movie_item_type)
-
         binding.tvMovieTitle.text = movie.title
     }
 
@@ -316,19 +305,22 @@ class MovieViewHolder(
 
     private fun displayGridTvItem(binding: ItemMovieGridTvBinding) {
         binding.root.apply {
-            setOnClickListener {
-                checkProviderAndRun { // <-- USAMOS NUESTRA LÓGICA
-                    when (context.toActivity()?.getCurrentFragment()) {
-                        is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
-                        is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
-                        is PeopleTvFragment -> findNavController().navigate(PeopleTvFragmentDirections.actionPeopleToMovie(id = movie.id))
-                        is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
-                    }
+            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA NORMAL) ---
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
+                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
+                ) {
+                    // Llama al listener del adaptador al que pertenece este ViewHolder
+                    (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
+                    return@setOnKeyListener true // Evento manejado
                 }
+                return@setOnKeyListener false // Dejar que el sistema maneje otras teclas
             }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, movie)
-                    .show()
+                ShowOptionsTvDialog(context, movie).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -340,17 +332,15 @@ class MovieViewHolder(
                 animation.fillAfter = true
             }
         }
-
+        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
         Glide.with(context)
             .load(movie.poster)
             .fallback(R.drawable.glide_fallback_cover)
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivMoviePoster)
-
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
-
             progress = when {
                 watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
                 else -> 0
@@ -360,7 +350,6 @@ class MovieViewHolder(
                 else -> View.GONE
             }
         }
-
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
             visibility = when {
@@ -368,10 +357,8 @@ class MovieViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
             ?: context.getString(R.string.movie_item_type)
-
         binding.tvMovieTitle.text = movie.title
     }
 

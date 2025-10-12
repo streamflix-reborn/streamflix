@@ -192,24 +192,21 @@ class TvShowViewHolder(
 
     private fun displayTvItem(binding: ItemTvShowTvBinding) {
         binding.root.apply {
-            setOnClickListener {
-                checkProviderAndRun { // <-- LÓGICA APLICADA
-                    when (context.toActivity()?.getCurrentFragment()) {
-                        is HomeTvFragment -> findNavController().navigate(
-                            HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id)
-                        )
-                        is MovieTvFragment -> findNavController().navigate(
-                            MovieTvFragmentDirections.actionMovieToTvShow(id = tvShow.id)
-                        )
-                        is TvShowTvFragment -> findNavController().navigate(
-                            TvShowTvFragmentDirections.actionTvShowToTvShow(id = tvShow.id)
-                        )
-                    }
+            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA GLOBAL) ---
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
+                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
+                ) {
+                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    return@setOnKeyListener true
                 }
+                return@setOnKeyListener false
             }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, tvShow)
-                    .show()
+                ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -227,14 +224,13 @@ class TvShowViewHolder(
                 }
             }
         }
-
+        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
         Glide.with(context)
             .load(tvShow.poster)
             .fallback(R.drawable.glide_fallback_cover)
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivTvShowPoster)
-
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             visibility = when {
@@ -242,24 +238,15 @@ class TvShowViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvTvShowLastEpisode.text = tvShow.seasons.lastOrNull()?.let { season ->
             season.episodes.lastOrNull()?.let { episode ->
                 if (season.number != 0) {
-                    context.getString(
-                        R.string.tv_show_item_season_number_episode_number,
-                        season.number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_season_number_episode_number, season.number, episode.number)
                 } else {
-                    context.getString(
-                        R.string.tv_show_item_episode_number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_episode_number, episode.number)
                 }
             }
         } ?: context.getString(R.string.tv_show_item_type)
-
         binding.tvTvShowTitle.text = tvShow.title
     }
 
@@ -326,27 +313,21 @@ class TvShowViewHolder(
 
     private fun displayGridTvItem(binding: ItemTvShowGridBinding) {
         binding.root.apply {
-            setOnClickListener {
-                checkProviderAndRun { // <-- LÓGICA APLICADA
-                    when (context.toActivity()?.getCurrentFragment()) {
-                        is GenreTvFragment -> findNavController().navigate(
-                            GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id)
-                        )
-                        is PeopleTvFragment -> findNavController().navigate(
-                            PeopleTvFragmentDirections.actionPeopleToTvShow(id = tvShow.id)
-                        )
-                        is SearchTvFragment -> findNavController().navigate(
-                            SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id)
-                        )
-                        is TvShowsTvFragment -> findNavController().navigate(
-                            TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id)
-                        )
-                    }
+            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA NORMAL) ---
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
+                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
+                ) {
+                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    return@setOnKeyListener true
                 }
+                return@setOnKeyListener false
             }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, tvShow)
-                    .show()
+                ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -358,14 +339,13 @@ class TvShowViewHolder(
                 animation.fillAfter = true
             }
         }
-
+        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
         Glide.with(context)
             .load(tvShow.poster)
             .fallback(R.drawable.glide_fallback_cover)
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivTvShowPoster)
-
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             visibility = when {
@@ -373,24 +353,15 @@ class TvShowViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvTvShowLastEpisode.text = tvShow.seasons.lastOrNull()?.let { season ->
             season.episodes.lastOrNull()?.let { episode ->
                 if (season.number != 0) {
-                    context.getString(
-                        R.string.tv_show_item_season_number_episode_number,
-                        season.number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_season_number_episode_number, season.number, episode.number)
                 } else {
-                    context.getString(
-                        R.string.tv_show_item_episode_number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_episode_number, episode.number)
                 }
             }
         } ?: context.getString(R.string.tv_show_item_type)
-
         binding.tvTvShowTitle.text = tvShow.title
     }
 
