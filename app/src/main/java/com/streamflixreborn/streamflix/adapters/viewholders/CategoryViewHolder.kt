@@ -29,6 +29,8 @@ import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.toActivity
 import java.util.Locale
+import com.streamflixreborn.streamflix.utils.UserPreferences
+import com.streamflixreborn.streamflix.providers.Provider
 
 class CategoryViewHolder(
     private val _binding: ViewBinding
@@ -51,24 +53,33 @@ class CategoryViewHolder(
             else -> null
         }
 
-    fun bind(category: Category) {
+    fun bind(
+        category: Category,
+        onMovieClick: ((Movie) -> Unit)? = null,
+        onTvShowClick: ((TvShow) -> Unit)? = null
+    ) {
         this.category = category
 
         when (_binding) {
-            is ItemCategoryMobileBinding -> displayMobileItem(_binding)
-            is ItemCategoryTvBinding -> displayTvItem(_binding)
-
-            is ContentCategorySwiperMobileBinding -> displayMobileSwiper(_binding)
+            is ItemCategoryMobileBinding -> displayMobileItem(_binding, onMovieClick, onTvShowClick)
+            is ItemCategoryTvBinding -> displayTvItem(_binding, onMovieClick, onTvShowClick)
+            is ContentCategorySwiperMobileBinding -> displayMobileSwiper(_binding, onMovieClick, onTvShowClick)
             is ContentCategorySwiperTvBinding -> displayTvSwiper(_binding)
         }
     }
 
-
-    private fun displayMobileItem(binding: ItemCategoryMobileBinding) {
+    private fun displayMobileItem(
+        binding: ItemCategoryMobileBinding,
+        onMovieClick: ((Movie) -> Unit)?,
+        onTvShowClick: ((TvShow) -> Unit)?
+    ) {
         binding.tvCategoryTitle.text = category.name
 
         binding.rvCategory.apply {
             adapter = AppAdapter().apply {
+                // AQUÍ ESTÁ LA MAGIA: Pasamos los listeners al adaptador interno
+                this.onMovieClickListener = onMovieClick
+                this.onTvShowClickListener = onTvShowClick
                 submitList(category.list)
             }
             if (itemDecorationCount == 0) {
@@ -77,12 +88,19 @@ class CategoryViewHolder(
         }
     }
 
-    private fun displayTvItem(binding: ItemCategoryTvBinding) {
+    private fun displayTvItem(
+        binding: ItemCategoryTvBinding,
+        onMovieClick: ((Movie) -> Unit)?,
+        onTvShowClick: ((TvShow) -> Unit)?
+    ) {
         binding.tvCategoryTitle.text = category.name
 
         binding.hgvCategory.apply {
             setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
             adapter = AppAdapter().apply {
+                // AQUÍ ESTÁ LA MAGIA: Pasamos los listeners al adaptador interno
+                this.onMovieClickListener = onMovieClick
+                this.onTvShowClickListener = onTvShowClick
                 submitList(category.list)
             }
             setItemSpacing(category.itemSpacing)
@@ -90,7 +108,11 @@ class CategoryViewHolder(
     }
 
 
-    private fun displayMobileSwiper(binding: ContentCategorySwiperMobileBinding) {
+    private fun displayMobileSwiper(
+        binding: ContentCategorySwiperMobileBinding,
+        onMovieClick: ((Movie) -> Unit)?,
+        onTvShowClick: ((TvShow) -> Unit)?
+    ) {
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(8_000) {
             binding.vpCategorySwiper.currentItem += 1
@@ -103,6 +125,9 @@ class CategoryViewHolder(
         ).flatten()
         binding.vpCategorySwiper.apply {
             adapter = AppAdapter().apply {
+                // AQUÍ ESTÁ LA MAGIA: Pasamos los listeners al adaptador interno
+                this.onMovieClickListener = onMovieClick
+                this.onTvShowClickListener = onTvShowClick
                 submitList(category.list)
                 post { (adapter as AppAdapter).submitList(items) }
             }
@@ -157,6 +182,20 @@ class CategoryViewHolder(
     private fun displayTvSwiper(binding: ContentCategorySwiperTvBinding) {
         val selected = category.list.getOrNull(category.selectedIndex) as? Show ?: return
 
+        fun checkProviderAndRun(show: Show, action: () -> Unit) {
+            val providerName = when(show){
+                is Movie -> show.providerName
+                is TvShow -> show.providerName
+                else -> null
+            }
+
+            if (!providerName.isNullOrBlank() && providerName != UserPreferences.currentProvider?.name) {
+                Provider.providers.keys.find { it.name == providerName }?.let {
+                    UserPreferences.currentProvider = it
+                }
+            }
+            action()
+        }
         when (val fragment = context.toActivity()?.getCurrentFragment()) {
             is HomeTvFragment -> when (selected) {
                 is Movie -> fragment.updateBackground(selected.banner, null)
@@ -231,15 +270,17 @@ class CategoryViewHolder(
             is TvShow -> selected.overview
         }
 
+
         binding.btnSwiperWatchNow.apply {
-            setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) {
-                    when (val fragment = context.toActivity()?.getCurrentFragment()) {
-                        is HomeTvFragment -> when (selected) {
-                            is Movie -> fragment.updateBackground(selected.banner, true)
-                            is TvShow -> fragment.updateBackground(selected.banner, true)
+            // ... (onFocusChangeListener y onKeyListener sin cambios)
+            setOnClickListener {
+                checkProviderAndRun(selected) { // <-- LÓGICA APLICADA
+                    findNavController().navigate(
+                        when (selected) {
+                            is Movie -> HomeTvFragmentDirections.actionHomeToMovie(selected.id)
+                            is TvShow -> HomeTvFragmentDirections.actionHomeToTvShow(selected.id)
                         }
-                    }
+                    )
                 }
             }
             setOnKeyListener { _, _, event ->

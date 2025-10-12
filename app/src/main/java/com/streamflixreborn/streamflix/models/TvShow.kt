@@ -22,6 +22,8 @@ class TvShow(
     var banner: String? = null,
 
     @Ignore
+    var providerName: String? = null,
+    @Ignore
     val seasons: List<Season> = listOf(),
     @Ignore
     val genres: List<Genre> = listOf(),
@@ -96,6 +98,7 @@ class TvShow(
         rating,
         poster,
         banner,
+        providerName,
         seasons,
         genres,
         directors,

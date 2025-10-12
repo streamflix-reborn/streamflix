@@ -24,6 +24,9 @@ class Movie(
     var banner: String? = null,
 
     @Ignore
+    var providerName: String? = null,
+
+    @Ignore
     val genres: List<Genre> = listOf(),
     @Ignore
     val directors: List<People> = listOf(),
@@ -89,6 +92,7 @@ class Movie(
         rating,
         poster,
         banner,
+        providerName,
         genres,
         directors,
         cast,

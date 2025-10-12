@@ -156,31 +156,32 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
 
         val mutableResults = initialResults.toMutableList()
 
-        // --- LÓGICA DE ORDENAMIENTO REFINADA ---
         val stateComparator = compareBy<ProviderResult> { providerResult ->
             when (val state = providerResult.state) {
-                // 1. Éxito CON resultados
                 is ProviderResult.State.Success -> if (state.results.isNotEmpty()) 1 else 3
-                // 2. Cargando
                 is ProviderResult.State.Loading -> 2
-                // 3. Éxito SIN resultados (ahora va después de Cargando)
-                // 4. Error
                 is ProviderResult.State.Error -> 4
             }
         }
-        // ------------------------------------
 
         targetProviders.forEachIndexed { index, provider ->
             launch {
                 try {
-                    val results = provider.search(query)
+                    val results = provider.search(query).onEach { item ->
+                        // ========= ¡AQUÍ ESTÁ LA MAGIA! =========
+                        // Le ponemos el sello a cada resultado
+                        when (item) {
+                            is Movie -> item.providerName = provider.name
+                            is TvShow -> item.providerName = provider.name
+                        }
+                        // =======================================
+                    }
                     mutableResults[index] = ProviderResult(provider, ProviderResult.State.Success(results))
                 } catch (e: Exception) {
                     Log.e("SearchViewModel", "searchGlobal for ${provider.name}: ", e)
                     mutableResults[index] = ProviderResult(provider, ProviderResult.State.Error(e))
                 }
 
-                // Emitimos la lista ordenada con la nueva lógica
                 _state.emit(State.SuccessGlobalSearching(mutableResults.sortedWith(stateComparator)))
             }
         }
