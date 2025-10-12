@@ -71,6 +71,7 @@ import com.streamflixreborn.streamflix.utils.toActivity
 import java.util.Locale
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.providers.Provider
+import android.view.KeyEvent
 
 class MovieViewHolder(
     private val _binding: ViewBinding
@@ -117,20 +118,20 @@ class MovieViewHolder(
             is ContentMovieRecommendationsTvBinding -> displayRecommendationsTv(_binding)
         }
     }
-    // --- NUESTRA FUNCIÓN AYUDANTE ---
+
     private fun checkProviderAndRun(action: () -> Unit) {
         if (!movie.providerName.isNullOrBlank() && movie.providerName != UserPreferences.currentProvider?.name) {
             Provider.providers.keys.find { it.name == movie.providerName }?.let {
                 UserPreferences.currentProvider = it
             }
         }
-        action() // Ejecuta la navegación original
+        action()
     }
 
     private fun displayMobileItem(binding: ItemMovieMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                checkProviderAndRun { // <-- USAMOS NUESTRA LÓGICA
+                checkProviderAndRun {
                     when (context.toActivity()?.getCurrentFragment()) {
                         is HomeMobileFragment -> {
                             findNavController().navigate(HomeMobileFragmentDirections.actionHomeToMovie(id = movie.id))
@@ -189,19 +190,15 @@ class MovieViewHolder(
 
     private fun displayTvItem(binding: ItemMovieTvBinding) {
         binding.root.apply {
-            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA GLOBAL) ---
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
-                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
-                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
-                ) {
-                    // Llama al listener del adaptador al que pertenece este ViewHolder
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
                     (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
-                    return@setOnKeyListener true // Evento manejado
+                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false // Dejar que el sistema maneje otras teclas
+                return@setOnKeyListener false
             }
-            // --- FIN DE LA MODIFICACIÓN ---
+
 
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, movie).show()
@@ -222,7 +219,7 @@ class MovieViewHolder(
                 }
             }
         }
-        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
+
         Glide.with(context)
             .load(movie.poster)
             .fallback(R.drawable.glide_fallback_cover)
@@ -255,7 +252,7 @@ class MovieViewHolder(
     private fun displayGridMobileItem(binding: ItemMovieGridMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                checkProviderAndRun { // <-- USAMOS NUESTRA LÓGICA
+                checkProviderAndRun {
                     when (context.toActivity()?.getCurrentFragment()) {
                         is GenreMobileFragment -> findNavController().navigate(GenreMobileFragmentDirections.actionGenreToMovie(id = movie.id))
                         is MoviesMobileFragment -> findNavController().navigate(MoviesMobileFragmentDirections.actionMoviesToMovie(id = movie.id))
@@ -305,19 +302,14 @@ class MovieViewHolder(
 
     private fun displayGridTvItem(binding: ItemMovieGridTvBinding) {
         binding.root.apply {
-            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA NORMAL) ---
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
-                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
-                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
-                ) {
-                    // Llama al listener del adaptador al que pertenece este ViewHolder
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
                     (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
-                    return@setOnKeyListener true // Evento manejado
+                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false // Dejar que el sistema maneje otras teclas
+                return@setOnKeyListener false
             }
-            // --- FIN DE LA MODIFICACIÓN ---
 
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, movie).show()
@@ -332,7 +324,6 @@ class MovieViewHolder(
                 animation.fillAfter = true
             }
         }
-        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
         Glide.with(context)
             .load(movie.poster)
             .fallback(R.drawable.glide_fallback_cover)

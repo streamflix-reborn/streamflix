@@ -73,7 +73,7 @@ import com.streamflixreborn.streamflix.utils.toActivity
 import java.util.Locale
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.providers.Provider
-
+import android.view.KeyEvent
 class TvShowViewHolder(
     private val _binding: ViewBinding
 ) : RecyclerView.ViewHolder(
@@ -135,7 +135,7 @@ class TvShowViewHolder(
     private fun displayMobileItem(binding: ItemTvShowMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                checkProviderAndRun { // <-- LÓGICA APLICADA
+                checkProviderAndRun {
                     when (context.toActivity()?.getCurrentFragment()) {
                         is HomeMobileFragment -> findNavController().navigate(
                             HomeMobileFragmentDirections.actionHomeToTvShow(id = tvShow.id)
@@ -192,19 +192,14 @@ class TvShowViewHolder(
 
     private fun displayTvItem(binding: ItemTvShowTvBinding) {
         binding.root.apply {
-            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA GLOBAL) ---
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
-                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
-                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
-                ) {
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
                     (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false
             }
-            // --- FIN DE LA MODIFICACIÓN ---
-
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, tvShow).show()
                 true
@@ -224,7 +219,7 @@ class TvShowViewHolder(
                 }
             }
         }
-        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
+
         Glide.with(context)
             .load(tvShow.poster)
             .fallback(R.drawable.glide_fallback_cover)
@@ -253,7 +248,7 @@ class TvShowViewHolder(
     private fun displayGridMobileItem(binding: ItemTvShowGridMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                checkProviderAndRun { // <-- LÓGICA APLICADA
+                checkProviderAndRun {
                     when (context.toActivity()?.getCurrentFragment()) {
                         is GenreMobileFragment -> findNavController().navigate(
                             GenreMobileFragmentDirections.actionGenreToTvShow(id = tvShow.id)
@@ -313,19 +308,14 @@ class TvShowViewHolder(
 
     private fun displayGridTvItem(binding: ItemTvShowGridBinding) {
         binding.root.apply {
-            // --- INICIO DE LA MODIFICACIÓN (PARA BÚSQUEDA NORMAL) ---
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
-                if (event.action == android.view.KeyEvent.ACTION_DOWN &&
-                    (keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER || keyCode == android.view.KeyEvent.KEYCODE_ENTER)
-                ) {
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
                     (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false
             }
-            // --- FIN DE LA MODIFICACIÓN ---
-
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, tvShow).show()
                 true
@@ -339,7 +329,7 @@ class TvShowViewHolder(
                 animation.fillAfter = true
             }
         }
-        // ... El resto del método para cargar imágenes y texto se mantiene exactamente igual
+
         Glide.with(context)
             .load(tvShow.poster)
             .fallback(R.drawable.glide_fallback_cover)

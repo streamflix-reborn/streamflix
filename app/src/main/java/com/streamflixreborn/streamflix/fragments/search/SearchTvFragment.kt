@@ -44,7 +44,7 @@ class SearchTvFragment : Fragment() {
     private val appAdapter by lazy {
         AppAdapter().apply {
             onMovieClickListener = { movie ->
-                // Esta es la acción que se ejecutará al hacer clic en una película
+
                 if (movie.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == movie.providerName }
                     Toast.makeText(requireContext(), "Cambiando a ${movie.providerName}", Toast.LENGTH_SHORT).show()
@@ -54,7 +54,7 @@ class SearchTvFragment : Fragment() {
                 )
             }
             onTvShowClickListener = { tvShow ->
-                // Esta es la acción que se ejecutará al hacer clic en una serie
+
                 if (tvShow.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == tvShow.providerName }
                     Toast.makeText(requireContext(), "Cambiando a ${tvShow.providerName}", Toast.LENGTH_SHORT).show()
@@ -65,7 +65,7 @@ class SearchTvFragment : Fragment() {
             }
         }
     }
-    // --- FIN DE LA MODIFICACIÓN ---
+
     private lateinit var voiceHelper: VoiceRecognitionHelper
 
     override fun onCreateView(
@@ -82,8 +82,7 @@ class SearchTvFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
-                // --- INICIO DE LA MODIFICACIÓN #2 ---
-                // Reemplazamos el 'when' incompleto por uno exhaustivo
+
                 when (state) {
                     is State.Searching, is State.GlobalSearching -> {
                         binding.isLoading.apply {
@@ -91,7 +90,7 @@ class SearchTvFragment : Fragment() {
                             pbIsLoading.visibility = View.VISIBLE
                             gIsLoadingRetry.visibility = View.GONE
                         }
-                        // Usamos el appAdapter que ya tiene los listeners
+
                         binding.vgvSearch.adapter = appAdapter
                     }
                     is State.SearchingMore -> appAdapter.isLoading = true
@@ -137,7 +136,6 @@ class SearchTvFragment : Fragment() {
                         }
                     }
                 }
-                // --- FIN DE LA MODIFICACIÓN #2 ---
             }
         }
     }
@@ -242,7 +240,6 @@ class SearchTvFragment : Fragment() {
     }
 
     private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
-        // --- LÓGICA COMPLETAMENTE REESCRITA PARA EL PATRÓN DE FILAS ---
         val categories = providerResults.map { providerResult ->
             val headerTitle = when (val state = providerResult.state) {
                 is ProviderResult.State.Loading -> "${providerResult.provider.name} - Buscando..."
