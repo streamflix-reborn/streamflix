@@ -31,6 +31,12 @@
     <string name="main_menu_settings">Einstellungen</string>
 
     <string name="search_input_hint">Filme / Serien suchen</string>
+    <string name="global_search">Globale Suche</string>
+    <string name="searching">Suche läuft...</string>
+    <string name="search_error">Fehler</string>
+    <string name="result">Ergebnis</string>
+    <string name="results">Ergebnisse</string>
+    <string name="switching_to_provider">Wechseln zu %s</string>
 
     <string name="home_swiper_watch_now">Ansehen</string>
     <string name="home_continue_watching">Weiterschauen</string>
