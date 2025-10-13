@@ -47,7 +47,7 @@ class SearchTvFragment : Fragment() {
 
                 if (movie.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == movie.providerName }
-                    Toast.makeText(requireContext(), "Cambiando a ${movie.providerName}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.switching_to_provider, movie.providerName), Toast.LENGTH_SHORT).show()
                 }
                 findNavController().navigate(
                     SearchTvFragmentDirections.actionSearchToMovie(id = movie.id)
@@ -57,7 +57,7 @@ class SearchTvFragment : Fragment() {
 
                 if (tvShow.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == tvShow.providerName }
-                    Toast.makeText(requireContext(), "Cambiando a ${tvShow.providerName}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.switching_to_provider, tvShow.providerName), Toast.LENGTH_SHORT).show()
                 }
                 findNavController().navigate(
                     SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id)
@@ -242,11 +242,12 @@ class SearchTvFragment : Fragment() {
     private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
         val categories = providerResults.map { providerResult ->
             val headerTitle = when (val state = providerResult.state) {
-                is ProviderResult.State.Loading -> "${providerResult.provider.name} - Buscando..."
-                is ProviderResult.State.Error -> "${providerResult.provider.name} - Error"
+                is ProviderResult.State.Loading -> "${providerResult.provider.name} - ${getString(R.string.searching)}"
+                is ProviderResult.State.Error -> "${providerResult.provider.name} - ${getString(R.string.search_error)}"
                 is ProviderResult.State.Success -> {
                     val count = state.results.size
-                    "${providerResult.provider.name} - $count ${if (count == 1) "resultado" else "resultados"}"
+                    val resultText = if (count == 1) getString(R.string.result) else getString(R.string.results)
+                    "${providerResult.provider.name} - $count $resultText"
                 }
             }
 
