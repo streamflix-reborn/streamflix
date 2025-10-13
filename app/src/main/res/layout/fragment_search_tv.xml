@@ -94,7 +94,7 @@
         android:nextFocusDown="@id/vgv_search"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
-        android:text="Búsqueda Global"
+        android:text="@string/global_search"
         android:textColor="@android:color/white"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="@id/cl_search"
