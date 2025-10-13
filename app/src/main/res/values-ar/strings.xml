@@ -31,6 +31,12 @@
 	<string name="main_menu_settings">الإعدادات</string>
 
 	<string name="search_input_hint">ابحث عن الأفلام أو المسلسلات</string>
+	<string name="global_search">بحث شامل</string>
+	<string name="searching">جاري البحث...</string>
+	<string name="search_error">خطأ</string>
+	<string name="result">نتيجة</string>
+	<string name="results">نتائج</string>
+	<string name="switching_to_provider">التبديل إلى %s</string>
 
 	<string name="home_swiper_watch_now">شاهد الآن</string>
 	<string name="home_continue_watching">متابعة المشاهدة</string>

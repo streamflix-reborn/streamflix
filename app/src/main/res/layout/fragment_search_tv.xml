@@ -34,7 +34,7 @@
             android:inputType="text"
             android:maxLines="1"
             android:nextFocusRight="@+id/btn_search_clear"
-            android:nextFocusDown="@id/vgv_search"
+            android:nextFocusDown="@id/sw_global_search"
             android:padding="14dp"
             android:textSize="16sp"
             app:layout_constraintEnd_toStartOf="@+id/btn_search_clear"
@@ -84,6 +84,23 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/sw_global_search"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:nextFocusDown="@id/vgv_search"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="@string/global_search"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="@id/cl_search"
+        app:layout_constraintStart_toStartOf="@id/cl_search"
+        app:layout_constraintTop_toBottomOf="@id/cl_search"/>
+
     <androidx.leanback.widget.VerticalGridView
         android:id="@+id/vgv_search"
         android:layout_width="0dp"
@@ -91,14 +108,12 @@
         android:layout_marginTop="16dp"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:descendantFocusability="afterDescendants"
         android:padding="16dp"
-        app:focusOutEnd="true"
-        app:focusOutFront="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cl_search"
-        app:numberOfColumns="6"
+        app:layout_constraintTop_toBottomOf="@id/sw_global_search"
         tools:listitem="@layout/item_movie_tv" />
 
     <include

@@ -30,6 +30,12 @@
     <string name="main_menu_settings">Settings</string>
 
     <string name="search_input_hint">Search movies, TV shows</string>
+    <string name="global_search">Global search</string>
+    <string name="searching">Searching...</string>
+    <string name="search_error">Error</string>
+    <string name="result">Result</string>
+    <string name="results">Results</string>
+    <string name="switching_to_provider">Switching to %s</string>
 
     <string name="home_swiper_watch_now">Watch Now</string>
     <string name="home_continue_watching">Continue Watching</string>

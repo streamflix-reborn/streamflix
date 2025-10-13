@@ -71,7 +71,9 @@ import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.toActivity
 import java.util.Locale
-
+import com.streamflixreborn.streamflix.utils.UserPreferences
+import com.streamflixreborn.streamflix.providers.Provider
+import android.view.KeyEvent
 class TvShowViewHolder(
     private val _binding: ViewBinding
 ) : RecyclerView.ViewHolder(
@@ -121,27 +123,30 @@ class TvShowViewHolder(
             is ContentTvShowRecommendationsTvBinding -> displayRecommendationsTv(_binding)
         }
     }
-
+    private fun checkProviderAndRun(action: () -> Unit) {
+        if (!tvShow.providerName.isNullOrBlank() && tvShow.providerName != UserPreferences.currentProvider?.name) {
+            Provider.providers.keys.find { it.name == tvShow.providerName }?.let {
+                UserPreferences.currentProvider = it
+            }
+        }
+        action()
+    }
 
     private fun displayMobileItem(binding: ItemTvShowMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                when (context.toActivity()?.getCurrentFragment()) {
-                    is HomeMobileFragment -> findNavController().navigate(
-                        HomeMobileFragmentDirections.actionHomeToTvShow(
-                            id = tvShow.id
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is HomeMobileFragment -> findNavController().navigate(
+                            HomeMobileFragmentDirections.actionHomeToTvShow(id = tvShow.id)
                         )
-                    )
-                    is MovieMobileFragment -> findNavController().navigate(
-                        MovieMobileFragmentDirections.actionMovieToTvShow(
-                            id = tvShow.id
+                        is MovieMobileFragment -> findNavController().navigate(
+                            MovieMobileFragmentDirections.actionMovieToTvShow(id = tvShow.id)
                         )
-                    )
-                    is TvShowMobileFragment -> findNavController().navigate(
-                        TvShowMobileFragmentDirections.actionTvShowToTvShow(
-                            id = tvShow.id
+                        is TvShowMobileFragment -> findNavController().navigate(
+                            TvShowMobileFragmentDirections.actionTvShowToTvShow(id = tvShow.id)
                         )
-                    )
+                    }
                 }
             }
             setOnLongClickListener {
@@ -187,28 +192,16 @@ class TvShowViewHolder(
 
     private fun displayTvItem(binding: ItemTvShowTvBinding) {
         binding.root.apply {
-            setOnClickListener {
-                when (context.toActivity()?.getCurrentFragment()) {
-                    is HomeTvFragment -> findNavController().navigate(
-                        HomeTvFragmentDirections.actionHomeToTvShow(
-                            id = tvShow.id
-                        )
-                    )
-                    is MovieTvFragment -> findNavController().navigate(
-                        MovieTvFragmentDirections.actionMovieToTvShow(
-                            id = tvShow.id
-                        )
-                    )
-                    is TvShowTvFragment -> findNavController().navigate(
-                        TvShowTvFragmentDirections.actionTvShowToTvShow(
-                            id = tvShow.id
-                        )
-                    )
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    return@setOnKeyListener true
                 }
+                return@setOnKeyListener false
             }
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, tvShow)
-                    .show()
+                ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -233,7 +226,6 @@ class TvShowViewHolder(
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivTvShowPoster)
-
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             visibility = when {
@@ -241,51 +233,36 @@ class TvShowViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvTvShowLastEpisode.text = tvShow.seasons.lastOrNull()?.let { season ->
             season.episodes.lastOrNull()?.let { episode ->
                 if (season.number != 0) {
-                    context.getString(
-                        R.string.tv_show_item_season_number_episode_number,
-                        season.number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_season_number_episode_number, season.number, episode.number)
                 } else {
-                    context.getString(
-                        R.string.tv_show_item_episode_number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_episode_number, episode.number)
                 }
             }
         } ?: context.getString(R.string.tv_show_item_type)
-
         binding.tvTvShowTitle.text = tvShow.title
     }
 
     private fun displayGridMobileItem(binding: ItemTvShowGridMobileBinding) {
         binding.root.apply {
             setOnClickListener {
-                when (context.toActivity()?.getCurrentFragment()) {
-                    is GenreMobileFragment -> findNavController().navigate(
-                        GenreMobileFragmentDirections.actionGenreToTvShow(
-                            id = tvShow.id
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is GenreMobileFragment -> findNavController().navigate(
+                            GenreMobileFragmentDirections.actionGenreToTvShow(id = tvShow.id)
                         )
-                    )
-                    is PeopleMobileFragment -> findNavController().navigate(
-                        PeopleMobileFragmentDirections.actionPeopleToTvShow(
-                            id = tvShow.id
+                        is PeopleMobileFragment -> findNavController().navigate(
+                            PeopleMobileFragmentDirections.actionPeopleToTvShow(id = tvShow.id)
                         )
-                    )
-                    is SearchMobileFragment -> findNavController().navigate(
-                        SearchMobileFragmentDirections.actionSearchToTvShow(
-                            id = tvShow.id
+                        is SearchMobileFragment -> findNavController().navigate(
+                            SearchMobileFragmentDirections.actionSearchToTvShow(id = tvShow.id)
                         )
-                    )
-                    is TvShowsMobileFragment -> findNavController().navigate(
-                        TvShowsMobileFragmentDirections.actionTvShowsToTvShow(
-                            id = tvShow.id
+                        is TvShowsMobileFragment -> findNavController().navigate(
+                            TvShowsMobileFragmentDirections.actionTvShowsToTvShow(id = tvShow.id)
                         )
-                    )
+                    }
                 }
             }
             setOnLongClickListener {
@@ -331,33 +308,16 @@ class TvShowViewHolder(
 
     private fun displayGridTvItem(binding: ItemTvShowGridBinding) {
         binding.root.apply {
-            setOnClickListener {
-                when (context.toActivity()?.getCurrentFragment()) {
-                    is GenreTvFragment -> findNavController().navigate(
-                        GenreTvFragmentDirections.actionGenreToTvShow(
-                            id = tvShow.id
-                        )
-                    )
-                    is PeopleTvFragment -> findNavController().navigate(
-                        PeopleTvFragmentDirections.actionPeopleToTvShow(
-                            id = tvShow.id
-                        )
-                    )
-                    is SearchTvFragment -> findNavController().navigate(
-                        SearchTvFragmentDirections.actionSearchToTvShow(
-                            id = tvShow.id
-                        )
-                    )
-                    is TvShowsTvFragment -> findNavController().navigate(
-                        TvShowsTvFragmentDirections.actionTvShowsToTvShow(
-                            id = tvShow.id
-                        )
-                    )
+            isFocusable = true
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    return@setOnKeyListener true
                 }
+                return@setOnKeyListener false
             }
             setOnLongClickListener {
-                ShowOptionsTvDialog(context, tvShow)
-                    .show()
+                ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->
@@ -376,7 +336,6 @@ class TvShowViewHolder(
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.ivTvShowPoster)
-
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             visibility = when {
@@ -384,24 +343,15 @@ class TvShowViewHolder(
                 else -> View.VISIBLE
             }
         }
-
         binding.tvTvShowLastEpisode.text = tvShow.seasons.lastOrNull()?.let { season ->
             season.episodes.lastOrNull()?.let { episode ->
                 if (season.number != 0) {
-                    context.getString(
-                        R.string.tv_show_item_season_number_episode_number,
-                        season.number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_season_number_episode_number, season.number, episode.number)
                 } else {
-                    context.getString(
-                        R.string.tv_show_item_episode_number,
-                        episode.number
-                    )
+                    context.getString(R.string.tv_show_item_episode_number, episode.number)
                 }
             }
         } ?: context.getString(R.string.tv_show_item_type)
-
         binding.tvTvShowTitle.text = tvShow.title
     }
 
@@ -548,13 +498,12 @@ class TvShowViewHolder(
         binding.tvTvShowOverview.text = tvShow.overview
 
         val episodeToWatch = tvShow.episodeToWatch
-
         binding.btnTvShowWatchEpisode.apply {
             setOnClickListener {
                 if (episodeToWatch == null) return@setOnClickListener
-
-                findNavController().navigate(
-                    TvShowMobileFragmentDirections.actionTvShowToPlayer(
+                checkProviderAndRun { // <-- LÓGICA APLICADA
+                    findNavController().navigate(
+                        TvShowMobileFragmentDirections.actionTvShowToPlayer(
                         id = episodeToWatch.id,
                         title = tvShow.title,
                         subtitle = episodeToWatch.season?.takeIf { it.number != 0 }?.let { season ->
@@ -593,7 +542,7 @@ class TvShowViewHolder(
                         ),
                     )
                 )
-            }
+            }}
 
             text = if (episodeToWatch != null) {
                 episodeToWatch.season?.takeIf { it.number != 0 }?.let { season ->
@@ -802,13 +751,12 @@ class TvShowViewHolder(
         binding.tvTvShowOverview.text = tvShow.overview
 
         val episodeToWatch = tvShow.episodeToWatch
-
         binding.btnTvShowWatchEpisode.apply {
             setOnClickListener {
                 if (episodeToWatch == null) return@setOnClickListener
-
-                findNavController().navigate(
-                    TvShowTvFragmentDirections.actionTvShowToPlayer(
+                checkProviderAndRun { // <-- LÓGICA APLICADA
+                    findNavController().navigate(
+                        TvShowTvFragmentDirections.actionTvShowToPlayer(
                         id = episodeToWatch.id,
                         title = tvShow.title,
                         subtitle = episodeToWatch.season?.takeIf { it.number != 0 }?.let { season ->
@@ -848,7 +796,7 @@ class TvShowViewHolder(
                     )
                 )
             }
-
+            }
             text = if (episodeToWatch != null) {
                 episodeToWatch.season?.takeIf { it.number != 0 }?.let { season ->
                     context.getString(

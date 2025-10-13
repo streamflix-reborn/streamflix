@@ -19,33 +19,57 @@ import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentSearchTvBinding
+import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.utils.CacheUtils
+import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.VoiceRecognitionHelper
 import com.streamflixreborn.streamflix.utils.hideKeyboard
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import androidx.navigation.fragment.findNavController
+import com.streamflixreborn.streamflix.providers.Provider
 
 class SearchTvFragment : Fragment() {
 
     private var hasAutoCleared409: Boolean = false
-
     private var _binding: FragmentSearchTvBinding? = null
     private val binding get() = _binding!!
 
     private val database by lazy { AppDatabase.getInstance(requireContext()) }
     private val viewModel by viewModelsFactory { SearchViewModel(database) }
 
-    private var appAdapter = AppAdapter()
+    private val appAdapter by lazy {
+        AppAdapter().apply {
+            onMovieClickListener = { movie ->
+
+                if (movie.providerName != UserPreferences.currentProvider?.name) {
+                    UserPreferences.currentProvider = Provider.providers.keys.find { it.name == movie.providerName }
+                    Toast.makeText(requireContext(), getString(R.string.switching_to_provider, movie.providerName), Toast.LENGTH_SHORT).show()
+                }
+                findNavController().navigate(
+                    SearchTvFragmentDirections.actionSearchToMovie(id = movie.id)
+                )
+            }
+            onTvShowClickListener = { tvShow ->
+
+                if (tvShow.providerName != UserPreferences.currentProvider?.name) {
+                    UserPreferences.currentProvider = Provider.providers.keys.find { it.name == tvShow.providerName }
+                    Toast.makeText(requireContext(), getString(R.string.switching_to_provider, tvShow.providerName), Toast.LENGTH_SHORT).show()
+                }
+                findNavController().navigate(
+                    SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id)
+                )
+            }
+        }
+    }
 
     private lateinit var voiceHelper: VoiceRecognitionHelper
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentSearchTvBinding.inflate(inflater, container, false)
         return binding.root
@@ -58,40 +82,41 @@ class SearchTvFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
+
                 when (state) {
-                    SearchViewModel.State.Searching -> {
+                    is State.Searching, is State.GlobalSearching -> {
                         binding.isLoading.apply {
                             root.visibility = View.VISIBLE
                             pbIsLoading.visibility = View.VISIBLE
                             gIsLoadingRetry.visibility = View.GONE
                         }
-                        binding.vgvSearch.adapter = AppAdapter().also {
-                            appAdapter = it
-                        }
+
+                        binding.vgvSearch.adapter = appAdapter
                     }
-                    SearchViewModel.State.SearchingMore -> appAdapter.isLoading = true
-                    is SearchViewModel.State.SuccessSearching -> {
+                    is State.SearchingMore -> appAdapter.isLoading = true
+                    is State.SuccessSearching -> {
                         displaySearch(state.results, state.hasMore)
                         appAdapter.isLoading = false
-                        binding.etSearch.nextFocusDownId = binding.vgvSearch.id
                         binding.vgvSearch.visibility = View.VISIBLE
                         binding.isLoading.root.visibility = View.GONE
                     }
-                    is SearchViewModel.State.FailedSearching -> {
+                    is State.SuccessGlobalSearching -> {
+                        displayGlobalSearch(state.providerResults)
+                        appAdapter.isLoading = false
+                        binding.vgvSearch.visibility = View.VISIBLE
+                        binding.isLoading.root.visibility = View.GONE
+                    }
+                    is State.FailedSearching -> {
                         val code = (state.error as? retrofit2.HttpException)?.code()
                         if (code == 409 && !hasAutoCleared409) {
                             hasAutoCleared409 = true
                             CacheUtils.clearAppCache(requireContext())
-                            android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done_409), android.widget.Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), getString(R.string.clear_cache_done_409), Toast.LENGTH_SHORT).show()
                             if (appAdapter.isLoading) appAdapter.isLoading = false
                             viewModel.search(viewModel.query)
                             return@collect
                         }
-                        Toast.makeText(
-                            requireContext(),
-                            state.error.message ?: "",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), state.error.message ?: "", Toast.LENGTH_SHORT).show()
                         if (appAdapter.isLoading) {
                             appAdapter.isLoading = false
                         } else {
@@ -101,7 +126,7 @@ class SearchTvFragment : Fragment() {
                                 btnIsLoadingRetry.setOnClickListener { viewModel.search(viewModel.query) }
                                 btnIsLoadingClearCache.setOnClickListener {
                                     CacheUtils.clearAppCache(requireContext())
-                                    android.widget.Toast.makeText(requireContext(), getString(com.streamflixreborn.streamflix.R.string.clear_cache_done), android.widget.Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(requireContext(), getString(R.string.clear_cache_done), Toast.LENGTH_SHORT).show()
                                     viewModel.search(viewModel.query)
                                 }
                                 binding.vgvSearch.visibility = View.INVISIBLE
@@ -121,35 +146,33 @@ class SearchTvFragment : Fragment() {
         _binding = null
     }
 
-
     private fun initializeSearch() {
         binding.etSearch.apply {
             setOnEditorActionListener { _, actionId, _ ->
-                when (actionId) {
-                    EditorInfo.IME_ACTION_GO,
-                    EditorInfo.IME_ACTION_SEARCH,
-                    EditorInfo.IME_ACTION_SEND,
-                    EditorInfo.IME_ACTION_NEXT,
-                    EditorInfo.IME_ACTION_DONE -> {
-                        viewModel.search(text.toString())
-                        hideKeyboard()
-                        true
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    val query = text.toString()
+                    hideKeyboard()
+
+                    if (binding.swGlobalSearch.isChecked) {
+                        val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
+                        viewModel.searchGlobal(query, currentLanguage)
+                    } else {
+                        viewModel.search(query)
                     }
-                    else -> false
+                    return@setOnEditorActionListener true
                 }
+                return@setOnEditorActionListener false
             }
 
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
-                   if(s.isNullOrBlank()){
-                       binding.etSearch.hint = getString(R.string.search_input_hint)
-                   }
-
+                    if (s.isNullOrBlank()) {
+                        binding.etSearch.hint = getString(R.string.search_input_hint)
+                    }
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             })
-
         }
 
         val blink = AlphaAnimation(1f, 0.3f).apply {
@@ -178,16 +201,9 @@ class SearchTvFragment : Fragment() {
 
         binding.btnSearchVoice.apply {
             requestFocus()
-            visibility =
-                if (voiceHelper.isAvailable()) View.VISIBLE else View.GONE
-
-            setOnClickListener {
-                if (!voiceHelper.isListening) {
-                    voiceHelper.startWithPermissionCheck()
-                }
-            }
+            visibility = if (voiceHelper.isAvailable()) View.VISIBLE else View.GONE
+            setOnClickListener { if (!voiceHelper.isListening) voiceHelper.startWithPermissionCheck() }
         }
-
 
         binding.btnSearchClear.setOnClickListener {
             binding.etSearch.setText("")
@@ -199,19 +215,14 @@ class SearchTvFragment : Fragment() {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
-            setItemSpacing(requireContext().resources.getDimension(R.dimen.search_spacing).toInt())
+            setItemSpacing(resources.getDimension(R.dimen.search_spacing).toInt())
         }
 
         binding.root.requestFocus()
     }
 
     private fun displaySearch(list: List<AppAdapter.Item>, hasMore: Boolean) {
-        binding.vgvSearch.apply {
-            setNumColumns(
-                if (viewModel.query == "") 5
-                else 6
-            )
-        }
+        binding.vgvSearch.setNumColumns(if (viewModel.query == "") 5 else 6)
 
         appAdapter.submitList(list.onEach {
             when (it) {
@@ -226,5 +237,34 @@ class SearchTvFragment : Fragment() {
         } else {
             appAdapter.setOnLoadMoreListener(null)
         }
+    }
+
+    private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
+        val categories = providerResults.map { providerResult ->
+            val headerTitle = when (val state = providerResult.state) {
+                is ProviderResult.State.Loading -> "${providerResult.provider.name} - ${getString(R.string.searching)}"
+                is ProviderResult.State.Error -> "${providerResult.provider.name} - ${getString(R.string.search_error)}"
+                is ProviderResult.State.Success -> {
+                    val count = state.results.size
+                    val resultText = if (count == 1) getString(R.string.result) else getString(R.string.results)
+                    "${providerResult.provider.name} - $count $resultText"
+                }
+            }
+
+            val items = (providerResult.state as? ProviderResult.State.Success)?.results?.onEach {
+                when (it) {
+                    is Movie -> it.itemType = AppAdapter.Type.MOVIE_TV_ITEM
+                    is TvShow -> it.itemType = AppAdapter.Type.TV_SHOW_TV_ITEM
+                }
+            } ?: emptyList()
+
+            Category(name = headerTitle, list = items).apply {
+                itemType = AppAdapter.Type.CATEGORY_TV_ITEM
+            }
+        }
+
+        binding.vgvSearch.setNumColumns(1) // La lista de categorías es una sola columna vertical
+        appAdapter.submitList(categories)
+        appAdapter.setOnLoadMoreListener(null)
     }
 }

@@ -19,11 +19,13 @@ import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentSearchMobileBinding
+import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
 import com.streamflixreborn.streamflix.utils.CacheUtils
+import com.streamflixreborn.streamflix.utils.UserPreferences // <-- IMPORT AÑADIDO
 import com.streamflixreborn.streamflix.utils.VoiceRecognitionHelper
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.hideKeyboard
@@ -60,8 +62,9 @@ class SearchMobileFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
+                // ========= BLOQUE WHEN MODIFICADO =========
                 when (state) {
-                    SearchViewModel.State.Searching -> {
+                    is State.Searching, is State.GlobalSearching -> {
                         binding.isLoading.apply {
                             root.visibility = View.VISIBLE
                             pbIsLoading.visibility = View.VISIBLE
@@ -71,13 +74,17 @@ class SearchMobileFragment : Fragment() {
                             appAdapter = it
                         }
                     }
-                    SearchViewModel.State.SearchingMore -> appAdapter.isLoading = true
-                    is SearchViewModel.State.SuccessSearching -> {
+                    is State.SearchingMore -> appAdapter.isLoading = true
+                    is State.SuccessSearching -> {
                         displaySearch(state.results, state.hasMore)
                         appAdapter.isLoading = false
                         binding.isLoading.root.visibility = View.GONE
                     }
-                    is SearchViewModel.State.FailedSearching -> {
+                    is State.SuccessGlobalSearching -> {
+                        displayGlobalSearch(state.providerResults)
+                        binding.isLoading.root.visibility = View.GONE
+                    }
+                    is State.FailedSearching -> {
                         val code = (state.error as? retrofit2.HttpException)?.code()
                         if (code == 409 && !hasAutoCleared409) {
                             hasAutoCleared409 = true
@@ -108,6 +115,7 @@ class SearchMobileFragment : Fragment() {
                         }
                     }
                 }
+                // ===========================================
             }
         }
     }
@@ -118,30 +126,31 @@ class SearchMobileFragment : Fragment() {
         _binding = null
     }
 
-
     private fun initializeSearch() {
         binding.etSearch.apply {
+            // ========= LÓGICA DE BÚSQUEDA MODIFICADA =========
             setOnEditorActionListener { _, actionId, _ ->
-                when (actionId) {
-                    EditorInfo.IME_ACTION_GO,
-                    EditorInfo.IME_ACTION_SEARCH,
-                    EditorInfo.IME_ACTION_SEND,
-                    EditorInfo.IME_ACTION_NEXT,
-                    EditorInfo.IME_ACTION_DONE -> {
-                        viewModel.search(text.toString())
-                        hideKeyboard()
-                        true
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    val query = binding.etSearch.text.toString()
+                    hideKeyboard()
+
+                    if (binding.swGlobalSearch.isChecked) {
+                        val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
+                        viewModel.searchGlobal(query, currentLanguage)
+                    } else {
+                        viewModel.search(query)
                     }
-                    else -> false
+                    return@setOnEditorActionListener true
                 }
+                return@setOnEditorActionListener false
             }
+            // =================================================
 
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     if(s.isNullOrBlank()){
                         binding.etSearch.hint = getString(R.string.search_input_hint)
                     }
-
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -198,7 +207,6 @@ class SearchMobileFragment : Fragment() {
                 SpacingItemDecoration(10.dp(requireContext()))
             )
         }
-
     }
 
     private fun displaySearch(list: List<AppAdapter.Item>, hasMore: Boolean) {
@@ -216,4 +224,43 @@ class SearchMobileFragment : Fragment() {
             appAdapter.setOnLoadMoreListener(null)
         }
     }
+
+    // ========= NUEVA FUNCIÓN PARA MOSTRAR RESULTADOS GLOBALES =========
+    private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
+        val allItems = mutableListOf<AppAdapter.Item>()
+
+        providerResults.forEach { providerResult ->
+            val headerTitle = when (val state = providerResult.state) {
+                is ProviderResult.State.Loading -> "${providerResult.provider.name} - ${getString(R.string.searching)}"
+                is ProviderResult.State.Error -> "${providerResult.provider.name} - ${getString(R.string.search_error)}"
+                is ProviderResult.State.Success -> {
+                    val count = state.results.size
+                    val resultText = if (count == 1) getString(R.string.result) else getString(R.string.results)
+                    "${providerResult.provider.name} - $count $resultText"
+                }
+            }
+
+            val header = Category(
+                name = headerTitle,
+                list = emptyList()
+            ).apply {
+                itemType = AppAdapter.Type.CATEGORY_MOBILE_ITEM
+            }
+            allItems.add(header)
+
+            if (providerResult.state is ProviderResult.State.Success) {
+                val results = providerResult.state.results.onEach {
+                    when (it) {
+                        is Movie -> it.itemType = AppAdapter.Type.MOVIE_GRID_MOBILE_ITEM
+                        is TvShow -> it.itemType = AppAdapter.Type.TV_SHOW_GRID_MOBILE_ITEM
+                    }
+                }
+                allItems.addAll(results)
+            }
+        }
+
+        appAdapter.submitList(allItems)
+        appAdapter.setOnLoadMoreListener(null) // Desactivamos la carga infinita en la búsqueda global
+    }
+    // ================================================================
 }

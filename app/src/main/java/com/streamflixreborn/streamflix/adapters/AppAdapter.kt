@@ -67,6 +67,17 @@ class AppAdapter(
     val items: MutableList<Item> = mutableListOf()
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    // --- LISTENERS AÑADIDOS AQUÍ ---
+    var onMovieClickListener: ((Movie) -> Unit)? = null
+    var onTvShowClickListener: ((TvShow) -> Unit)? = null
+    var onMovieLongClickListener: ((Movie) -> Unit)? = null
+    var onTvShowLongClickListener: ((TvShow) -> Unit)? = null
+    var onGenreClickListener: ((Genre) -> Unit)? = null
+    var onPeopleClickListener: ((People) -> Unit)? = null
+    var onEpisodeClickListener: ((Episode) -> Unit)? = null
+    var onSeasonClickListener: ((Season) -> Unit)? = null
+    var onProviderClickListener: ((Provider) -> Unit)? = null
+    // ---------------------------------
     interface Item {
         var itemType: Type
     }
@@ -459,16 +470,34 @@ class AppAdapter(
 
         val adjustedPosition = header?.let { position - 1 } ?: position
         when (holder) {
-            is CategoryViewHolder -> holder.bind(items[adjustedPosition] as Category)
-            is EpisodeViewHolder -> holder.bind(items[adjustedPosition] as Episode)
+            is CategoryViewHolder -> holder.bind(
+                items[adjustedPosition] as Category,
+                onMovieClickListener,
+                onTvShowClickListener,
+            )
+            is EpisodeViewHolder -> holder.bind(
+                items[adjustedPosition] as Episode
+            ) // Tu original no pasaba listener, lo respeto
             is FooterViewHolder -> footer?.bind?.invoke(holder.binding)
-            is GenreViewHolder -> holder.bind(items[adjustedPosition] as Genre)
+            is GenreViewHolder -> holder.bind(
+                items[adjustedPosition] as Genre
+            ) // Tu original no pasaba listener, lo respeto
             is HeaderViewHolder -> header?.bind?.invoke(holder.binding)
-            is MovieViewHolder -> holder.bind(items[adjustedPosition] as Movie)
-            is PeopleViewHolder -> holder.bind(items[adjustedPosition] as People)
-            is ProviderViewHolder -> holder.bind(items[adjustedPosition] as Provider)
-            is SeasonViewHolder -> holder.bind(items[adjustedPosition] as Season)
-            is TvShowViewHolder -> holder.bind(items[adjustedPosition] as TvShow)
+            is MovieViewHolder -> holder.bind(
+                items[adjustedPosition] as Movie
+            ) // Los listeners se manejan dentro del ViewHolder
+            is PeopleViewHolder -> holder.bind(
+                items[adjustedPosition] as People
+            ) // Tu original no pasaba listener, lo respeto
+            is ProviderViewHolder -> holder.bind(
+                items[adjustedPosition] as Provider
+            ) // Tu original no pasaba listener, lo respeto
+            is SeasonViewHolder -> holder.bind(
+                items[adjustedPosition] as Season
+            ) // Tu original no pasaba listener, lo respeto
+            is TvShowViewHolder -> holder.bind(
+                items[adjustedPosition] as TvShow
+            ) // Los listeners se manejan dentro del ViewHolder
         }
 
         val state = states[holder.layoutPosition]
