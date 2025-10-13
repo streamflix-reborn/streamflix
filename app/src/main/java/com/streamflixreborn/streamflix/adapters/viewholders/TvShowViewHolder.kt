@@ -195,7 +195,14 @@ class TvShowViewHolder(
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
                 if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    checkProviderAndRun {
+                        when (context.toActivity()?.getCurrentFragment()) {
+                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
+                            is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
+                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
+                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
+                        }
+                    }
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false
@@ -311,7 +318,14 @@ class TvShowViewHolder(
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
                 if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    (bindingAdapter as? AppAdapter)?.onTvShowClickListener?.invoke(tvShow)
+                    checkProviderAndRun {
+                        when (context.toActivity()?.getCurrentFragment()) {
+                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
+                            is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
+                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
+                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
+                        }
+                    }
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false

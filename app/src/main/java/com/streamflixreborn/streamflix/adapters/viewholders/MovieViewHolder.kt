@@ -58,6 +58,8 @@ import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragment
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragmentDirections
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragment
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragmentDirections
+import com.streamflixreborn.streamflix.fragments.tv_shows.TvShowsTvFragment
+import com.streamflixreborn.streamflix.fragments.tv_shows.TvShowsTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
@@ -193,7 +195,14 @@ class MovieViewHolder(
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
                 if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
+                    checkProviderAndRun {
+                        when (context.toActivity()?.getCurrentFragment()) {
+                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
+                            is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
+                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
+                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
+                        }
+                    }
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false
@@ -305,7 +314,14 @@ class MovieViewHolder(
             isFocusable = true
             setOnKeyListener { _, keyCode, event ->
                 if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    (bindingAdapter as? AppAdapter)?.onMovieClickListener?.invoke(movie)
+                    checkProviderAndRun {
+                        when (context.toActivity()?.getCurrentFragment()) {
+                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
+                            is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
+                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
+                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
+                        }
+                    }
                     return@setOnKeyListener true
                 }
                 return@setOnKeyListener false
