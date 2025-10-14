@@ -127,6 +127,7 @@ class TvShowViewHolder(
         if (!tvShow.providerName.isNullOrBlank() && tvShow.providerName != UserPreferences.currentProvider?.name) {
             Provider.providers.keys.find { it.name == tvShow.providerName }?.let {
                 UserPreferences.currentProvider = it
+                AppDatabase.setup(itemView.context)
             }
         }
         action()

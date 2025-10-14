@@ -8,6 +8,7 @@ import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.utils.UserPreferences
+import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,15 @@ import kotlinx.coroutines.launch
 class GenreViewModel(private val id: String, database: AppDatabase) : ViewModel() {
 
     private val _state = MutableStateFlow<State>(State.Loading)
+    
+    init {
+        // Listen for provider changes and reload data
+        viewModelScope.launch {
+            ProviderChangeNotifier.providerChangeFlow.collect {
+                getGenre(id)
+            }
+        }
+    }
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: Flow<State> = combine(
         _state,

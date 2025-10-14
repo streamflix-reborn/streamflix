@@ -21,7 +21,7 @@ object UserPreferences {
     // Default DoH Provider URL (Cloudflare)
     private const val DEFAULT_DOH_PROVIDER_URL = "https://cloudflare-dns.com/dns-query"
     const val DOH_DISABLED_VALUE = "" // Value to represent DoH being disabled
-    private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingcommunityz.me"
+    private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingcommunityz.it"
 
     fun setup(context: Context) {
         Log.d(TAG, "setup() called with context: $context")
@@ -41,7 +41,11 @@ object UserPreferences {
 
     var currentProvider: Provider?
         get() = Provider.providers.keys.find { it.name == Key.CURRENT_PROVIDER.getString() }
-        set(value) = Key.CURRENT_PROVIDER.setString(value?.name)
+        set(value) {
+            Key.CURRENT_PROVIDER.setString(value?.name)
+            // Notify all ViewModels that the provider has changed
+            ProviderChangeNotifier.notifyProviderChanged()
+        }
 
     var currentLanguage: String?
         get() = Key.CURRENT_LANGUAGE.getString()

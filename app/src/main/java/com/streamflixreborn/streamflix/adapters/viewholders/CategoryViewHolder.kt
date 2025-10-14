@@ -31,6 +31,7 @@ import com.streamflixreborn.streamflix.utils.toActivity
 import java.util.Locale
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.database.AppDatabase
 
 class CategoryViewHolder(
     private val _binding: ViewBinding
@@ -194,6 +195,7 @@ class CategoryViewHolder(
             if (!providerName.isNullOrBlank() && providerName != UserPreferences.currentProvider?.name) {
                 Provider.providers.keys.find { it.name == providerName }?.let {
                     UserPreferences.currentProvider = it
+                    AppDatabase.setup(itemView.context)
                 }
             }
             action()

@@ -28,7 +28,7 @@ import retrofit2.http.Query
 object Altadefinizione01Provider : Provider {
 
     override val name: String = "Altadefinizione01"
-    override val baseUrl: String = "https://altadefinizione01.wang"
+    override val baseUrl: String = "https://altadefinizione01.racing"
     override val logo: String get() = "$baseUrl/templates/Darktemplate_pagespeed/images/logo.png"
     override val language: String = "it"
 
@@ -174,11 +174,10 @@ object Altadefinizione01Provider : Provider {
         }
     }
 
-    private fun cleanEpisodeTitle(rawTitle: String): String? {
-        val cleaned = rawTitle
-            .replace(Regex("^Episodio\\s*\\d+\\s*:\\s*", RegexOption.IGNORE_CASE), "")
-            .trim()
-        return cleaned.ifBlank { null }
+    private fun cleanDescriptionEpisodeTitle(rawTitle: String): String? {
+        val trimmed = rawTitle.trim()
+        val leading = trimmed.substringBefore(":").trim()
+        return leading.ifBlank { null }
     }
 
     override suspend fun search(query: String, page: Int): List<AppAdapter.Item> {
@@ -326,7 +325,7 @@ object Altadefinizione01Provider : Provider {
             seasonPane?.select("ul > li > a[allowfullscreen][data-link]")?.forEach { ep ->
                 val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                     ?: ep.text().trim().toIntOrNull() ?: 0
-                val epTitle = cleanEpisodeTitle(ep.attr("data-title"))
+                val epTitle = cleanDescriptionEpisodeTitle(ep.attr("data-title"))
                 val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
                 val server = mirrors.firstOrNull { m ->
                     val name = m.text().trim()
@@ -375,7 +374,7 @@ object Altadefinizione01Provider : Provider {
         seasonPane.select("ul > li > a[allowfullscreen][data-link]").forEach { ep ->
             val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                 ?: ep.text().trim().toIntOrNull() ?: 0
-            val epTitle = cleanEpisodeTitle(ep.attr("data-title"))
+            val epTitle = cleanDescriptionEpisodeTitle(ep.attr("data-title"))
             val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
             val server = mirrors.firstOrNull { m ->
                 val name = m.text().trim()

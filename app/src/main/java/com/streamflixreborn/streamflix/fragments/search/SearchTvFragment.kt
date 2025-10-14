@@ -47,6 +47,7 @@ class SearchTvFragment : Fragment() {
 
                 if (movie.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == movie.providerName }
+                    AppDatabase.setup(requireContext())
                     Toast.makeText(requireContext(), getString(R.string.switching_to_provider, movie.providerName), Toast.LENGTH_SHORT).show()
                 }
                 findNavController().navigate(
@@ -57,6 +58,7 @@ class SearchTvFragment : Fragment() {
 
                 if (tvShow.providerName != UserPreferences.currentProvider?.name) {
                     UserPreferences.currentProvider = Provider.providers.keys.find { it.name == tvShow.providerName }
+                    AppDatabase.setup(requireContext())
                     Toast.makeText(requireContext(), getString(R.string.switching_to_provider, tvShow.providerName), Toast.LENGTH_SHORT).show()
                 }
                 findNavController().navigate(

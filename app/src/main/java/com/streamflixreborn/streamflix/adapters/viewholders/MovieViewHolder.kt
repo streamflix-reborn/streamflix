@@ -125,6 +125,7 @@ class MovieViewHolder(
         if (!movie.providerName.isNullOrBlank() && movie.providerName != UserPreferences.currentProvider?.name) {
             Provider.providers.keys.find { it.name == movie.providerName }?.let {
                 UserPreferences.currentProvider = it
+                AppDatabase.setup(itemView.context)
             }
         }
         action()

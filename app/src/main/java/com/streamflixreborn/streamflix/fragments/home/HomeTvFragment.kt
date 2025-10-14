@@ -26,6 +26,10 @@ import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.Runnable
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.streamflixreborn.streamflix.utils.UserPreferences
+import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
 
 class HomeTvFragment : Fragment() {
 
@@ -34,8 +38,16 @@ class HomeTvFragment : Fragment() {
     private var _binding: FragmentHomeTvBinding? = null
     private val binding get() = _binding!!
 
-    private val database by lazy { AppDatabase.getInstance(requireContext()) }
-    private val viewModel by viewModelsFactory { HomeViewModel(database) }
+    private val viewModel: HomeViewModel by lazy {
+        val providerKey = UserPreferences.currentProvider?.name ?: "default"
+        val factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return HomeViewModel(AppDatabase.getInstance(requireContext())) as T
+            }
+        }
+        ViewModelProvider(this, factory).get(providerKey, HomeViewModel::class.java)
+    }
 
     private val appAdapter = AppAdapter()
 
@@ -54,6 +66,16 @@ class HomeTvFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initializeHome()
+
+        // Lightweight refresh when provider changes
+        viewLifecycleOwner.lifecycleScope.launch {
+            ProviderChangeNotifier.providerChangeFlow.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect {
+                viewModel.getHome()
+            }
+        }
+
+        // Initial load
+        viewModel.getHome()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
