@@ -301,8 +301,8 @@ object Altadefinizione01Provider : Provider {
             ?.trim()
             ?.replace(Regex("Fonte:.*$"), "")
             ?.trim()
-        val genres = doc.select("p.meta_dd b[title=Genere]")
-            .firstOrNull()?.parent()?.select("a")?.map { a ->
+        val genres = doc.select("p.meta_dd:has(b.icon-medal) a[href]")
+            .map { a ->
                 Genre(
                     id = a.attr("href"),
                     name = a.text().trim()
@@ -326,11 +326,6 @@ object Altadefinizione01Provider : Provider {
                 val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                     ?: ep.text().trim().toIntOrNull() ?: 0
                 val epTitle = cleanDescriptionEpisodeTitle(ep.attr("data-title"))
-                val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
-                val server = mirrors.firstOrNull { m ->
-                    val name = m.text().trim()
-                    !name.contains("4K", true)
-                }
                 episodes.add(
                     Episode(
                         id = "$id#s${seasonNumber}e$epNum",
@@ -375,17 +370,20 @@ object Altadefinizione01Provider : Provider {
             val epNum = ep.attr("data-num").substringAfter('x').toIntOrNull()
                 ?: ep.text().trim().toIntOrNull() ?: 0
             val epTitle = cleanDescriptionEpisodeTitle(ep.attr("data-title"))
-            val mirrors = ep.parent()?.select(".mirrors a.mr[data-link]") ?: emptyList()
-            val server = mirrors.firstOrNull { m ->
-                val name = m.text().trim()
-                !name.contains("4K", true)
-            }
+            val episodeMirrors = ep.parent()?.select("a[data-link]")?.filter { link ->
+                link.text().contains("Dropload", true)
+            } ?: emptyList()
+            
+            val episodePoster = episodeMirrors.firstOrNull()?.attr("data-link")?.let { link ->
+                val droploadId = link.substringAfter("embed-").substringBefore(".html")
+                "https://img.dropcdn.io/$droploadId.jpg"
+            } 
             episodes.add(
                 Episode(
                     id = "$showUrl#s${seasonNumber}e$epNum",
                     number = epNum,
                     title = epTitle,
-                    poster = null,
+                    poster = episodePoster,
                 )
             )
         }

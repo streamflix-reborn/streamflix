@@ -194,19 +194,15 @@ class MovieViewHolder(
     private fun displayTvItem(binding: ItemMovieTvBinding) {
         binding.root.apply {
             isFocusable = true
-            setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    checkProviderAndRun {
-                        when (context.toActivity()?.getCurrentFragment()) {
-                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
-                            is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
-                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
-                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
-                        }
+            setOnClickListener {
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
+                        is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
+                        is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
+                        is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
                     }
-                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false
             }
 
 
@@ -313,19 +309,15 @@ class MovieViewHolder(
     private fun displayGridTvItem(binding: ItemMovieGridTvBinding) {
         binding.root.apply {
             isFocusable = true
-            setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    checkProviderAndRun {
-                        when (context.toActivity()?.getCurrentFragment()) {
-                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
-                            is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
-                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
-                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
-                        }
+            setOnClickListener {
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToMovie(id = movie.id))
+                        is MoviesTvFragment -> findNavController().navigate(MoviesTvFragmentDirections.actionMoviesToMovie(id = movie.id))
+                        is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
+                        is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
                     }
-                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false
             }
 
             setOnLongClickListener {

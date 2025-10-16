@@ -194,19 +194,15 @@ class TvShowViewHolder(
     private fun displayTvItem(binding: ItemTvShowTvBinding) {
         binding.root.apply {
             isFocusable = true
-            setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    checkProviderAndRun {
-                        when (context.toActivity()?.getCurrentFragment()) {
-                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
-                            is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
-                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
-                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
-                        }
+            setOnClickListener {
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
+                        is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
+                        is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
+                        is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
                     }
-                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false
             }
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, tvShow).show()
@@ -317,19 +313,15 @@ class TvShowViewHolder(
     private fun displayGridTvItem(binding: ItemTvShowGridBinding) {
         binding.root.apply {
             isFocusable = true
-            setOnKeyListener { _, keyCode, event ->
-                if (event.action == KeyEvent.ACTION_DOWN && (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    checkProviderAndRun {
-                        when (context.toActivity()?.getCurrentFragment()) {
-                            is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
-                            is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
-                            is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
-                            is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
-                        }
+            setOnClickListener {
+                checkProviderAndRun {
+                    when (context.toActivity()?.getCurrentFragment()) {
+                        is HomeTvFragment -> findNavController().navigate(HomeTvFragmentDirections.actionHomeToTvShow(id = tvShow.id))
+                        is TvShowsTvFragment -> findNavController().navigate(TvShowsTvFragmentDirections.actionTvShowsToTvShow(id = tvShow.id))
+                        is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToTvShow(id = tvShow.id))
+                        is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToTvShow(id = tvShow.id))
                     }
-                    return@setOnKeyListener true
                 }
-                return@setOnKeyListener false
             }
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, tvShow).show()

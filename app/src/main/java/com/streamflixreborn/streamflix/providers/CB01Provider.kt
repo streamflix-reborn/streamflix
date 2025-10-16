@@ -58,7 +58,7 @@ object CB01Provider : Provider {
         suspend fun getTvShows(@Path("page") page: Int): Document
 
         @Headers(USER_AGENT)
-        @GET
+        @GET(".")
         suspend fun searchMovies(@Query("s") query: String): Document
 
         @Headers(USER_AGENT)
@@ -147,7 +147,7 @@ object CB01Provider : Provider {
             .replace(Regex("\\s*\\[\\s*hd\\s*(?:/3d)?\\s*\\]", RegexOption.IGNORE_CASE), "")
 
         val episodeLangRegex = Regex(
-            pattern = "\\s*[–-]\\s*\\d+[x×]\\d+(?:/\\d+)*\\s*[–-]\\s*([A-Za-z][A-Za-z -]{1,})\\s*$",
+            pattern = "\\s*[–-]\\s*\\d+[x×]\\d+(?:[./]\\d+)*\\s*[–-]\\s*([A-Za-z][A-Za-z -]{1,})\\s*$",
             option = RegexOption.IGNORE_CASE
         )
         val cleanedEpisode = episodeLangRegex.replace(withoutYearHd) { mr ->
