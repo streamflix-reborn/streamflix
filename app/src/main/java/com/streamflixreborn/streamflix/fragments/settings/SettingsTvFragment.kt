@@ -31,7 +31,7 @@ import java.util.Locale
 
 class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
 
-    private val DEFAULT_DOMAIN_VALUE = "streamingcommunityz.it"
+    private val DEFAULT_DOMAIN_VALUE = "streamingcommunityz.bz"
     private val PREFS_ERROR_VALUE = "PREFS_NOT_INIT_ERROR"
 
     private lateinit var db: AppDatabase

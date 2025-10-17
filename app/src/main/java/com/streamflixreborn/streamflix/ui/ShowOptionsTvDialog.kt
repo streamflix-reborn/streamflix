@@ -16,9 +16,11 @@ import com.streamflixreborn.streamflix.fragments.home.HomeTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
+import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.toActivity
+import com.streamflixreborn.streamflix.providers.Provider
 import java.util.Calendar
 
 class ShowOptionsTvDialog(
@@ -29,6 +31,23 @@ class ShowOptionsTvDialog(
     private val binding = DialogShowOptionsTvBinding.inflate(LayoutInflater.from(context))
 
     private val database = AppDatabase.getInstance(context)
+
+    private fun checkProviderAndRun(show: AppAdapter.Item, action: () -> Unit) {
+        val providerName = when(show){
+            is Movie -> show.providerName
+            is TvShow -> show.providerName
+            is Episode -> show.tvShow?.providerName
+            else -> null
+        }
+
+        if (!providerName.isNullOrBlank() && providerName != UserPreferences.currentProvider?.name) {
+            Provider.providers.keys.find { it.name == providerName }?.let {
+                UserPreferences.currentProvider = it
+                AppDatabase.setup(context)
+            }
+        }
+        action()
+    }
 
     init {
         setContentView(binding.root)
@@ -109,16 +128,18 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionShowWatched.apply {
             setOnClickListener {
-                database.episodeDao().save(episode.copy().apply {
-                    merge(episode)
-                    isWatched = !isWatched
-                    if (isWatched) {
-                        watchedDate = Calendar.getInstance()
-                        watchHistory = null
-                    } else {
-                        watchedDate = null
-                    }
-                })
+                checkProviderAndRun(episode) {
+                    AppDatabase.getInstance(context).episodeDao().save(episode.copy().apply {
+                        merge(episode)
+                        isWatched = !isWatched
+                        if (isWatched) {
+                            watchedDate = Calendar.getInstance()
+                            watchHistory = null
+                        } else {
+                            watchedDate = null
+                        }
+                    })
+                }
 
                 hide()
             }
@@ -131,22 +152,24 @@ class ShowOptionsTvDialog(
         }
         binding.btnOptionEpisodeMarkAllPreviousWatched.apply {
             setOnClickListener {
-                val episodeDao = database.episodeDao()
-                val episodeNumber = episode.number
-                val tvShowId = episode.tvShow?.id ?: return@setOnClickListener
-                val allEpisodes = episodeDao.getEpisodesByTvShowId(tvShowId)
+                checkProviderAndRun(episode) {
+                    val episodeDao = AppDatabase.getInstance(context).episodeDao()
+                    val episodeNumber = episode.number
+                    val tvShowId = episode.tvShow?.id ?: return@checkProviderAndRun
+                    val allEpisodes = episodeDao.getEpisodesByTvShowId(tvShowId)
 
-                val targetState = !episode.isWatched // If current is watched, we unwatch; else, we mark watched
-                val now = Calendar.getInstance()
+                    val targetState = !episode.isWatched // If current is watched, we unwatch; else, we mark watched
+                    val now = Calendar.getInstance()
 
-                for (ep in allEpisodes) {
-                    if (ep.number <= episodeNumber && ep.isWatched != targetState) {
-                        episodeDao.save(ep.copy().apply {
-                            merge(ep)
-                            isWatched = targetState
-                            watchedDate = if (targetState) now else null
-                            watchHistory = if (targetState) null else watchHistory
-                        })
+                    for (ep in allEpisodes) {
+                        if (ep.number <= episodeNumber && ep.isWatched != targetState) {
+                            episodeDao.save(ep.copy().apply {
+                                merge(ep)
+                                isWatched = targetState
+                                watchedDate = if (targetState) now else null
+                                watchHistory = if (targetState) null else watchHistory
+                            })
+                        }
                     }
                 }
 
@@ -163,15 +186,17 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionProgramClear.apply {
             setOnClickListener {
-                database.episodeDao().save(episode.copy().apply {
-                    merge(episode)
-                    watchHistory = null
-                })
-                episode.tvShow?.let { tvShow ->
-                    database.tvShowDao().save(tvShow.copy().apply {
-                        merge(tvShow)
-                        isWatching = false
+                checkProviderAndRun(episode) {
+                    AppDatabase.getInstance(context).episodeDao().save(episode.copy().apply {
+                        merge(episode)
+                        watchHistory = null
                     })
+                    episode.tvShow?.let { tvShow ->
+                        AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
+                            merge(tvShow)
+                            isWatching = false
+                        })
+                    }
                 }
 
                 hide()
@@ -201,10 +226,12 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionShowFavorite.apply {
             setOnClickListener {
-                database.movieDao().save(movie.copy().apply {
-                    merge(movie)
-                    isFavorite = !isFavorite
-                })
+                checkProviderAndRun(movie) {
+                    AppDatabase.getInstance(context).movieDao().save(movie.copy().apply {
+                        merge(movie)
+                        isFavorite = !isFavorite
+                    })
+                }
 
                 hide()
             }
@@ -220,16 +247,18 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionShowWatched.apply {
             setOnClickListener {
-                database.movieDao().save(movie.copy().apply {
-                    merge(movie)
-                    isWatched = !isWatched
-                    if (isWatched) {
-                        watchedDate = Calendar.getInstance()
-                        watchHistory = null
-                    } else {
-                        watchedDate = null
-                    }
-                })
+                checkProviderAndRun(movie) {
+                    AppDatabase.getInstance(context).movieDao().save(movie.copy().apply {
+                        merge(movie)
+                        isWatched = !isWatched
+                        if (isWatched) {
+                            watchedDate = Calendar.getInstance()
+                            watchHistory = null
+                        } else {
+                            watchedDate = null
+                        }
+                    })
+                }
 
                 hide()
             }
@@ -243,10 +272,12 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionProgramClear.apply {
             setOnClickListener {
-                database.movieDao().save(movie.copy().apply {
-                    merge(movie)
-                    watchHistory = null
-                })
+                checkProviderAndRun(movie) {
+                    AppDatabase.getInstance(context).movieDao().save(movie.copy().apply {
+                        merge(movie)
+                        watchHistory = null
+                    })
+                }
 
                 hide()
             }
@@ -274,10 +305,12 @@ class ShowOptionsTvDialog(
 
         binding.btnOptionShowFavorite.apply {
             setOnClickListener {
-                database.tvShowDao().save(tvShow.copy().apply {
-                    merge(tvShow)
-                    isFavorite = !isFavorite
-                })
+                checkProviderAndRun(tvShow) {
+                    AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
+                        merge(tvShow)
+                        isFavorite = !isFavorite
+                    })
+                }
 
                 hide()
             }

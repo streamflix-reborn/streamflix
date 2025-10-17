@@ -477,7 +477,8 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                             .sortedBy { it.language ?: it.label }
                     )
                     list.add(LocalSubtitles)
-                    list.add(OpenSubtitles)
+                    // Hide OpenSubtitles from the Subtitles submenu
+                    // list.add(OpenSubtitles)
                 }
             }
 
